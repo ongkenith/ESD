@@ -11,12 +11,10 @@ CREATE TABLE IF NOT EXISTS scheduling (
   DeliveryLocation INT NOT NULL,
   DroneID INT NOT NULL,
   PRIMARY KEY (Schedule_ID),
-  -- Assuming a 'locations' table exists with a primary key 'Location_ID'
-  FOREIGN KEY (PickUpLocation) REFERENCES locations(Location_ID)
+  FOREIGN KEY (PickUpLocation) REFERENCES Store(store_id)
     ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (DeliveryLocation) REFERENCES locations(Location_ID)
+  FOREIGN KEY (DeliveryLocation) REFERENCES `Order`(Order_ID)
     ON DELETE CASCADE ON UPDATE CASCADE,
-  -- Assuming a 'drone' table exists with a primary key 'DroneID'
   FOREIGN KEY (DroneID) REFERENCES drone(DroneID)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
