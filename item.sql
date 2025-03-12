@@ -8,3 +8,6 @@ CREATE TABLE Item (
   FOREIGN KEY (`store_id`) REFERENCES Store(`store_id`)
   
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+INSERT INTO `Item` (`item_id`, `name`, `store_id`, `price`) VALUES
+(1, `Mala Soup`, `1`, 100);
