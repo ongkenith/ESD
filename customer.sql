@@ -1,6 +1,3 @@
-CREATE DATABASE IF NOT EXISTS my_database;
-USE my_database;
-
 CREATE TABLE Customer (
     Customer_ID INT AUTO_INCREMENT PRIMARY KEY,
     Name VARCHAR(255) NOT NULL,
