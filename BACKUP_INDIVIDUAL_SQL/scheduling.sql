@@ -1,7 +1,7 @@
--- Drop the table if it already exists
+
 DROP TABLE IF EXISTS scheduling;
 
--- Create the scheduling table
+
 CREATE TABLE IF NOT EXISTS scheduling (
   Schedule_ID INT NOT NULL AUTO_INCREMENT,
   ScheduleName VARCHAR(255) NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS scheduling (
   PRIMARY KEY (Schedule_ID),
   FOREIGN KEY (PickUpLocation) REFERENCES Store(store_id)
     ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (DeliveryLocation) REFERENCES `Order`(Order_ID)
+  FOREIGN KEY (DeliveryLocation) REFERENCES Order(Order_ID)
     ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (DroneID) REFERENCES drone(DroneID)
     ON DELETE CASCADE ON UPDATE CASCADE
