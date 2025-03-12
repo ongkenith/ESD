@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS 'Drone';
+CREATE TABLE Drone (
+    DroneID INT AUTO_INCREMENT PRIMARY KEY,
+    Drone_Status VARCHAR(50)
+);
