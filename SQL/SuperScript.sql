@@ -84,14 +84,23 @@ CREATE TABLE `Order` (
   Payment_Status BOOLEAN,
   DeliveryLocation INT,
   Customer_ID INT,
-  Item_list VARCHAR(255),
   Order_Status VARCHAR(255),
   FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID)
 );
 
+-- Order Item
+
+-- Create Order Item table
+CREATE TABLE `Order_Item` (
+  `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `order_id` int(11) NOT NULL,
+  `item_id` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  FOREIGN KEY (`order_id`) REFERENCES `Order`(order_id),
+  FOREIGN KEY (`item_id`) REFERENCES Item(item_id)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 -- Schedule
-
 
 DROP TABLE IF EXISTS scheduling;
 
