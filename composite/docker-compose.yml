@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  # Database
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: my_database
+    ports:
+      - "3307:3306"
+    volumes:
+      - ../SQL/SuperScript.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Atomic services
+  drone:
+    build:
+      context: ../atomic/drone
+    ports:
+      - "5000:5000"
+    environment:
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+    depends_on:
+      db:
+        condition: service_healthy
+
+  scheduling:
+    build:
+      context: ../atomic/scheduling
+    ports:
+      - "5001:5001"
+    environment:
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Composite services
+  condition-check:
+    build:
+      context: ./condition-check
+    ports:
+      - "5100:5100"
+    depends_on:
+      - drone
+      - scheduling
+
+  drone-navigation:
+    build:
+      context: ./drone-navigation
+    ports:
+      - "5200:5200"
+    depends_on:
+      - condition-check 
