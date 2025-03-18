@@ -1,13 +1,21 @@
-#!/usr/bin/env python3
-# The above shebang (#!) operator tells Unix-like environments
-# to run this file as a python3 script
-
 from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import MetaData
 from os import environ
 import os
+
+# Define a naming convention for the constraints to match MySQL's behavior
+convention = {
+  "ix": 'ix_%(column_0_label)s',
+  "uq": "uq_%(table_name)s_%(column_0_name)s",
+  "ck": "ck_%(table_name)s_%(constraint_name)s",
+  "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+  "pk": "pk_%(table_name)s"
+}
+
+metadata = MetaData(naming_convention=convention)
 
 app = Flask(__name__)
 
@@ -19,40 +27,95 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle': 299}
 
-db = SQLAlchemy(app)
+db = SQLAlchemy(app, metadata=metadata)
 
 
+# Define a model for Order table
+class Order(db.Model):
+    __tablename__ = 'Order'  # We'll use __table_args__ to handle the quotes
+    
+    Order_ID = db.Column(db.Integer, primary_key=True)
+    Order_Date = db.Column(db.DateTime, nullable=False)
+    Drone_ID = db.Column(db.Integer)
+    Total_Amount = db.Column(db.Float)
+    Payment_Status = db.Column(db.Boolean)
+    DeliveryLocation = db.Column(db.Integer)
+    Customer_ID = db.Column(db.Integer)
+    Order_Status = db.Column(db.String(255))
+    
+    __table_args__ = {'quote': True}  # This tells SQLAlchemy to quote the table name
+
+# Define models for other tables needed for relationships
+class Store(db.Model):
+    __tablename__ = 'Store'
+    
+    store_id = db.Column(db.Integer, primary_key=True)
+    pickup_location = db.Column(db.Integer, nullable=False)
+
+class Drone(db.Model):
+    __tablename__ = 'Drone'
+    
+    DroneID = db.Column(db.Integer, primary_key=True)
+    Drone_Status = db.Column(db.String(50))
+
+# Main Scheduling model
 class Scheduling(db.Model):
-    __tablename__ = 'Scheduling'
+    __tablename__ = 'scheduling'  # Changed to lowercase to match the SQL schema
 
-    schedule_id = db.Column(db.Integer, primary_key=True)
-    scheduleName = db.Column(db.String(255), nullable=False)
-    scheduleDateTime = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    droneID = db.Column(db.Integer, db.ForeignKey(
-        'Drone.droneID', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
-    deliveryLocation = db.Column(db.Integer, db.ForeignKey(
-        'Order.deliveryLocation', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
-    pickUpLocation = db.Column(db.Integer, db.ForeignKey(
-        'Store.pickup_location', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
-    weatherCheck = db.Column(db.Boolean, nullable=False)
+    Schedule_ID = db.Column(db.Integer, primary_key=True)  # Changed to match SQL case
+    ScheduleName = db.Column(db.String(255), nullable=False)  # Changed to match SQL case
+    ScheduleDateTime = db.Column(db.DateTime, nullable=False, default=datetime.now)  # Changed to match SQL case
+    WeatherCheck = db.Column(db.Boolean, nullable=False)  # Changed to match SQL case
+
+    # Define columns with matching case to SQL schema
+    PickUpLocation = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
+    DeliveryLocation = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
+    DroneID = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
+    
+    # Define foreign keys as relationships instead of constraints
+    pickup_location = db.relationship('Store', foreign_keys=[PickUpLocation])
+    delivery_location = db.relationship('Order', foreign_keys=[DeliveryLocation])
+    drone = db.relationship('Drone', foreign_keys=[DroneID])
+    
+    # Specify all foreign key constraints with proper table and column names
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            ['PickUpLocation'], 
+            ['Store.store_id'],
+            ondelete='CASCADE',
+            onupdate='CASCADE'
+        ),
+        db.ForeignKeyConstraint(
+            ['DeliveryLocation'], 
+            ['Order.Order_ID'],
+            ondelete='CASCADE',
+            onupdate='CASCADE'
+        ),
+        db.ForeignKeyConstraint(
+            ['DroneID'], 
+            ['Drone.DroneID'],
+            ondelete='CASCADE',
+            onupdate='CASCADE'
+        ),
+        {'quote': True}  # This tells SQLAlchemy to quote the table name and identifiers
+    )
 
     def json(self):
         dto = {
-            'schedule_id': self.schedule_id,
-            'schedule_name': self.scheduleName,
-            'schedule_date': self.scheduleDateTime,
-            'drone_id': self.droneID,
-            'deliveryLocation': self.deliveryLocation,
-            'pickUpLocation': self.pickUpLocation,
-            'weatherCheck': self.weatherCheck
+            'schedule_id': self.Schedule_ID,
+            'schedule_name': self.ScheduleName,
+            'schedule_date': self.ScheduleDateTime,
+            'drone_id': self.DroneID,
+            'deliveryLocation': self.DeliveryLocation,
+            'pickUpLocation': self.PickUpLocation,
+            'weatherCheck': self.WeatherCheck
         }
         return dto
 
 
-
 @app.route("/schedule/<string:drone_id>")
 def find_by_drone_id(drone_id):
-    schedule = db.session.scalar(db.select(Scheduling).filter_by(droneID=drone_id))
+    schedule = db.session.scalar(db.select(Scheduling).filter_by(DroneID=int(drone_id)))
     if schedule:
         return jsonify(
             {
@@ -76,7 +139,15 @@ def create_schedule():
     deliveryLocation = request.json.get('deliveryLocation')
     pickUpLocation = request.json.get('pickUpLocation')
     weatherCheck = request.json.get('weatherCheck')
-    schedule = Scheduling(droneID=drone_id, scheduleName='STH STH STH', deliveryLocation=deliveryLocation, pickUpLocation=pickUpLocation, weatherCheck=weatherCheck)
+    
+    # Updated to use the correct field names that match the database schema
+    schedule = Scheduling(
+        DroneID=drone_id, 
+        ScheduleName='STH STH STH', 
+        DeliveryLocation=deliveryLocation, 
+        PickUpLocation=pickUpLocation, 
+        WeatherCheck=weatherCheck
+    )
 
     try:
         db.session.add(schedule)

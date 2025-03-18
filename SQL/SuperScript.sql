@@ -36,7 +36,7 @@ CREATE TABLE Store (
 -- Dumping data for table `store`
 --
 
-INSERT INTO `store` (`store_id`, `pickup_location`) VALUES
+INSERT INTO `Store` (`store_id`, `pickup_location`) VALUES
 (1, 123456);
 
 
@@ -88,6 +88,12 @@ CREATE TABLE `Order` (
   FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID)
 );
 
+INSERT INTO `Order` (Order_Date, Drone_ID, Total_Amount, Payment_Status, DeliveryLocation, Customer_ID, Order_Status) 
+VALUES
+(NOW(), 1, 150.00, TRUE, 654321, 1, 'Pending'),
+(NOW(), 4, 75.50, TRUE, 987654, 2, 'Processing'),
+(NOW(), 5, 200.00, FALSE, 246810, 3, 'Confirmed');
+
 -- Order Item
 
 -- Create Order Item table
@@ -114,11 +120,11 @@ CREATE TABLE IF NOT EXISTS scheduling (
   DeliveryLocation INT NOT NULL,
   DroneID INT NOT NULL,
   PRIMARY KEY (Schedule_ID),
-  FOREIGN KEY (PickUpLocation) REFERENCES Store(store_id)
+  FOREIGN KEY (PickUpLocation) REFERENCES Store(`store_id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (DeliveryLocation) REFERENCES `Order`(Order_ID)
     ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (DroneID) REFERENCES drone(DroneID)
+  FOREIGN KEY (DroneID) REFERENCES Drone(DroneID)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
