@@ -3,4 +3,4 @@ WORKDIR /app
 COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 5003
-CMD ["python", "store.py"]
+CMD ["python", "./store.py"]
