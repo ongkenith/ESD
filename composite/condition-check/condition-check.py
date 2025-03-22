@@ -8,9 +8,22 @@ import json
 app = Flask(__name__)
 CORS(app)
 
+# Determine environment and set base URLs
+DOCKER_MODE = os.environ.get('DOCKER_MODE', 'true').lower() == 'true'
+
+# Set base hostnames based on environment
+if DOCKER_MODE:
+    print("Running in Docker mode with container hostnames")
+    DRONE_HOST = "drone:5000"
+    SCHEDULING_HOST = "scheduling:5001"
+else:
+    print("Running in local mode with localhost")
+    DRONE_HOST = "localhost:5000"
+    SCHEDULING_HOST = "localhost:5001"
+
 # URLs for the microservices
-drone_URL = "http://drone:5000/drone"
-scheduling_URL = "http://scheduling:5001/schedule"
+drone_URL = f"http://{DRONE_HOST}/drone"
+scheduling_URL = f"http://{SCHEDULING_HOST}/schedule"
 
 # OpenWeather API configuration
 WEATHER_API_KEY = "c74cacd58d151f5cb253802574dacabd"

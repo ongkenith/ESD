@@ -9,11 +9,28 @@ import time
 app = Flask(__name__)
 CORS(app)
 
+# Determine environment and set base URLs
+DOCKER_MODE = os.environ.get('DOCKER_MODE', 'true').lower() == 'true'
+
+# Set base hostnames based on environment
+if DOCKER_MODE:
+    print("Running in Docker mode with container hostnames")
+    ORDER_HOST = "order:5010"
+    STORE_HOST = "store:5003"
+    DRONE_NAVIGATION_HOST = "drone-navigation:5200"
+    NOTIFICATION_HOST = "notification:5300"
+else:
+    print("Running in local mode with localhost")
+    ORDER_HOST = "localhost:5010"
+    STORE_HOST = "localhost:5003"
+    DRONE_NAVIGATION_HOST = "localhost:5200"
+    NOTIFICATION_HOST = "localhost:5300"
+
 # URLs for the microservices
-order_URL = "http://order:5010/order"
-store_URL = "http://store:5003/store"
-drone_navigation_URL = "http://drone-navigation:5200/navigate-drone"
-notification_URL = "http://notification:5300/notify" # This would be your notification service if implemented
+order_URL = f"http://{ORDER_HOST}/order"
+store_URL = f"http://{STORE_HOST}/store"
+drone_navigation_URL = f"http://{DRONE_NAVIGATION_HOST}/navigate-drone"
+notification_URL = f"http://{NOTIFICATION_HOST}/notify"
 
 # RabbitMQ configuration
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
