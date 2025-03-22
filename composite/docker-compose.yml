@@ -29,11 +29,55 @@ services:
       db:
         condition: service_healthy
 
+  customer:
+    build:
+      context: ../atomic/customer-service
+    ports:
+      - "5005:5005"
+    environment:
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+    depends_on:
+      db:
+        condition: service_healthy
+  
+  item:
+    build:
+      context: ../atomic/item-service
+    ports:
+      - "5002:5002"
+    environment:
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+    depends_on:
+      db:
+        condition: service_healthy
+
+  store:
+    build:
+      context: ../atomic/store-service
+    ports:
+      - "5003:5003"
+    environment:
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+    depends_on:
+      db:
+        condition: service_healthy
+
+  order:
+    build:
+      context: ../atomic/order
+    ports:
+      - "5010:5010"
+    environment:
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+    depends_on:
+      db:
+        condition: service_healthy
+    
   scheduling:
     build:
       context: ../atomic/scheduling
     ports:
-      - "5001:5001"
+      - "5004:5001"  # Changed port mapping to avoid conflict with order service
     environment:
       dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
     depends_on:
@@ -56,4 +100,16 @@ services:
     ports:
       - "5200:5200"
     depends_on:
-      - condition-check 
+      - condition-check
+      
+  # New Processing Order service
+  processing-order:
+    build:
+      context: ./processing-order
+    ports:
+      - "5400:5400"
+    depends_on:
+      - order
+      - store
+      - item
+      - drone-navigation
