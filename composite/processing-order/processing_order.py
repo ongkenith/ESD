@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os, sys
 from invokes import invoke_http
+import pika
+import json
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -11,6 +14,68 @@ order_URL = "http://order:5010/order"
 store_URL = "http://store:5003/store"
 drone_navigation_URL = "http://drone-navigation:5200/navigate-drone"
 notification_URL = "http://notification:5300/notify" # This would be your notification service if implemented
+
+# RabbitMQ configuration
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
+RABBITMQ_PORT = int(os.environ.get('RABBITMQ_PORT', 5672))
+RABBITMQ_QUEUE = os.environ.get('RABBITMQ_QUEUE', 'notification_queue')
+RABBITMQ_USER = os.environ.get('RABBITMQ_USER', 'guest')
+RABBITMQ_PASS = os.environ.get('RABBITMQ_PASS', 'guest')
+
+# Function to send message to RabbitMQ
+def send_to_rabbitmq(message_data):
+    try:
+        print("Attempting to connect to RabbitMQ...")
+        
+        # Retry mechanism for connecting to RabbitMQ
+        max_retries = 5
+        retry_count = 0
+        connected = False
+        
+        while not connected and retry_count < max_retries:
+            try:
+                # Connect to RabbitMQ with credentials
+                credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+                parameters = pika.ConnectionParameters(
+                    host=RABBITMQ_HOST, 
+                    port=RABBITMQ_PORT,
+                    credentials=credentials
+                )
+                connection = pika.BlockingConnection(parameters)
+                connected = True
+            except pika.exceptions.AMQPConnectionError as e:
+                retry_count += 1
+                wait_time = 5
+                print(f"Failed to connect to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}. Retry {retry_count}/{max_retries} in {wait_time} seconds...")
+                print(f"Error: {e}")
+                time.sleep(wait_time)
+        
+        if not connected:
+            raise Exception(f"Could not connect to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT} after maximum retries")
+        
+        print(f"Successfully connected to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}")
+        channel = connection.channel()
+        
+        # Declare the queue
+        channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
+        
+        # Send the message
+        channel.basic_publish(
+            exchange='',
+            routing_key=RABBITMQ_QUEUE,
+            body=json.dumps(message_data),
+            properties=pika.BasicProperties(
+                delivery_mode=2,  # make message persistent
+            )
+        )
+        
+        print(f" [x] Sent notification message to queue: {message_data}")
+        connection.close()
+        return True
+        
+    except Exception as e:
+        print(f"Failed to send message to RabbitMQ: {str(e)}")
+        return False
 
 @app.route("/health", methods=['GET'])
 def health_check():
@@ -134,7 +199,8 @@ def process_order():
                     "message": f"Failed to update order status: {update_result.get('message', 'Unknown error')}"
                 }), update_result["code"]
                 
-            # Step 5: Send notification to customer (if notification service is implemented)
+            # Step 5: Send notification to customer via RabbitMQ
+            notification_sent = False
             try:
                 notification_data = {
                     "customer_id": customer_id,
@@ -142,13 +208,15 @@ def process_order():
                     "order_id": order_id
                 }
                 
-                # Note: This is commented out because the notification service might not be implemented yet
+                # Send notification via RabbitMQ
+                notification_sent = send_to_rabbitmq(notification_data)
+                print(f"Notification sent to RabbitMQ queue: {notification_data}, Result: {notification_sent}")
+                
+                # For direct API testing if needed
                 # notification_result = invoke_http(
                 #     notification_URL, method='POST', json=notification_data
                 # )
                 # print("Notification result:", notification_result)
-                
-                print("Would send notification:", notification_data)
                 
             except Exception as e:
                 # Continue even if notification fails
@@ -164,7 +232,8 @@ def process_order():
                         "pickup_location": pickup_location
                     },
                     "navigation_details": navigation_result["data"],
-                    "status": "Order processing complete"
+                    "status": "Order processing complete",
+                    "notification_sent": notification_sent
                 },
                 "message": "Order has been processed successfully and scheduled for delivery."
             })
