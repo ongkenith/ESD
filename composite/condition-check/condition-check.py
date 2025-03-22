@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os, sys
 from invokes import invoke_http
+import requests
+import json
 
 app = Flask(__name__)
 CORS(app)
@@ -10,27 +12,112 @@ CORS(app)
 drone_URL = "http://drone:5000/drone"
 scheduling_URL = "http://scheduling:5001/schedule"
 
-# Simulated weather API response
+# OpenWeather API configuration
+WEATHER_API_KEY = "c74cacd58d151f5cb253802574dacabd"
+WEATHER_API_URL = "https://api.openweathermap.org/data/2.5/weather"
+
+# Function to check weather using OpenWeather API
 def check_weather(location):
-    # Simulating weather API with a dictionary
-    # In a real implementation, you would call an actual weather API
-    weather_conditions = {
-        123456: "sunny",  # Store pickup location
-        654321: "rainy",  # Some other location
-        111111: "sunny"   # Another example location
+    # Map location codes to city names for the API call
+    city_mapping = {
+        123456: "Singapore",
+        654321: "Singapore,Marina Bay",
+        111111: "Singapore,Changi"
     }
     
-    condition = weather_conditions.get(location, "sunny")  # Default to sunny if location not found
-    is_safe = condition.lower() != "rainy"  # Rainy is unsafe for drone flight
+    # Get city name based on location or default to Singapore
+    city_name = city_mapping.get(location, "Singapore")
     
-    return {
-        "code": 200,
-        "data": {
-            "location": location,
-            "weather_condition": condition,
-            "is_safe": is_safe
+    try:
+        print(f"\nAttempting to call OpenWeather API for location {location} mapped to city: {city_name}")
+        # Make API call to OpenWeather
+        params = {
+            "q": city_name,
+            "APPID": WEATHER_API_KEY,  # Use APPID instead of appid
+            "units": "metric"  # Get temperature in Celsius
         }
-    }
+        
+        api_url = WEATHER_API_URL
+        print(f"Full API URL: {api_url}?q={params['q']}&APPID={params['APPID']}&units={params['units']}")
+        
+        # Test connection to api.openweathermap.org
+        try:
+            import socket
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2)
+            result = s.connect_ex(('api.openweathermap.org', 80))
+            if result == 0:
+                print("Connection to api.openweathermap.org is successful")
+            else:
+                print(f"Connection to api.openweathermap.org failed with error code {result}")
+            s.close()
+        except Exception as e:
+            print(f"Socket test failed: {str(e)}")
+        
+        # Make the actual API request
+        print("Sending request to OpenWeather API...")
+        response = requests.get(api_url, params=params, timeout=5)
+        print(f"OpenWeather API response status code: {response.status_code}")
+        
+        if response.status_code == 200:
+            weather_data = response.json()
+            print(f"OpenWeather API response data: {json.dumps(weather_data, indent=2)}")
+            
+            # Extract relevant weather information
+            weather_condition = weather_data["weather"][0]["main"].lower()
+            temperature = weather_data["main"]["temp"]
+            wind_speed = weather_data["wind"]["speed"]
+            
+            # Define conditions unsafe for drone flight
+            unsafe_conditions = ["thunderstorm", "rain", "snow"]
+            high_wind_threshold = 10.0  # m/s (normal threshold for drone flight)
+            
+            # Check if weather is safe for drone flight
+            is_safe = (
+                weather_condition not in unsafe_conditions and 
+                wind_speed < high_wind_threshold
+            )
+            
+            return {
+                "code": 200,
+                "data": {
+                    "location": location,
+                    "weather_condition": weather_condition,
+                    "temperature": temperature,
+                    "wind_speed": wind_speed,
+                    "is_safe": is_safe,
+                    "source": "OpenWeather API"
+                }
+            }
+        else:
+            # API call failed, fall back to default safe weather
+            print(f"Weather API call failed with status {response.status_code}")
+            print(f"Response content: {response.text}")
+            return {
+                "code": 200,
+                "data": {
+                    "location": location,
+                    "weather_condition": "sunny",
+                    "is_safe": True,
+                    "source": "Default fallback (API call failed)",
+                    "error_details": f"API status: {response.status_code}, Response: {response.text}"
+                }
+            }
+    except Exception as e:
+        # Exception occurred, fall back to default safe weather
+        import traceback
+        print(f"Error retrieving weather data: {str(e)}")
+        print(traceback.format_exc())
+        return {
+            "code": 200,
+            "data": {
+                "location": location,
+                "weather_condition": "sunny",
+                "is_safe": True,
+                "source": "Default fallback (exception)",
+                "error_details": str(e)
+            }
+        }
 
 @app.route("/check-condition", methods=['POST'])
 def check_condition():
