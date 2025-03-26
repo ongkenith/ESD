@@ -1,4 +1,4 @@
-version: '3'
+# version: '3'
 
 services:
   # Database
@@ -144,3 +144,25 @@ services:
       - drone-navigation
       - rabbitmq
       - notification
+  
+  placing-order:
+    build:
+      context: ./placing-order
+    ports:
+      - "5100:5000"
+    environment:
+      - CUSTOMER_SERVICE_URL=http://customer:5005/customer
+      - ITEM_SERVICE_URL=http://item:5002/items
+      - ORDER_SERVICE_URL=http://order:5010/order
+      
+    depends_on:
+      - customer
+      - item
+      - order
+      - store
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

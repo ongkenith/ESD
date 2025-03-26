@@ -5,16 +5,16 @@ FROM python:3.8-slim
 WORKDIR /app
 
 # Copy the requirements file into the container at /app
-COPY composite/placing-order/requirements.txt .
+COPY requirements.txt .  
 
 # Install the required dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the atomic services (customer-service, item-service, order) and composite service
-COPY atomic/customer-service /app/atomic/customer-service/
-COPY atomic/item-service /app/atomic/item-service/
-COPY atomic/order /app/atomic/order/
-COPY composite/placing-order /app/composite/placing-order/
+# Copying files from within placing-order directory (atomic services)
+COPY ../customer-service /app/atomic/customer-service/
+COPY ../item-service /app/atomic/item-service/
+COPY ../order /app/atomic/order/
+COPY . /app/composite/placing-order/
 
 # Expose the port that the Flask app will run on
 EXPOSE 5000
