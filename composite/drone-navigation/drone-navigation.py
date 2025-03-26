@@ -8,7 +8,7 @@ CORS(app)
 
 # URLs for the microservices
 condition_check_URL = "http://condition-check:5100/check-condition"
-drone_URL = "http://drone:5000/drone"
+drone_URL = "http://drone:5006/drone"
 
 @app.route("/navigate-drone", methods=['POST'])
 def navigate_drone():

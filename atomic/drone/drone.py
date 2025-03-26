@@ -9,7 +9,7 @@ from flasgger import Swagger
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    environ.get("dbURL") or "mysql+mysqlconnector://root@localhost:3306/my_database"
+    environ.get("dbURL")
 )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # disable modifications to prevent money used
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle': 299} # discard and replace connection to prevent timeout
@@ -113,4 +113,4 @@ def update_order(drone_id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5006, debug=True)
