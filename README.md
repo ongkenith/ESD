@@ -3,11 +3,11 @@
 
 **PRE-REQUISITES**
 1. Have docker running on your desktop (DockerHub)
-2. Have SQL software on your local machine (WAMP/MAMP)
+2. Have SQL software on your local machine
 
 **BEFORE RUNNING SERVICE(S)**
 Please go to the docker compose files for your respective OS: "docker-compose_windows" for Windows users and "docker-compose_mac" for Mac users, and ensure that the following are correct
-- Under 'db', ensure that MYSQL_ALLOW_EMPTY_PASSWORD and MYSQL_ROOT_PASSWORD have the correct values
+- Under 'db', ensure that MYSQL_ALLOW_EMPTY_PASSWORD (yes/no) and MYSQL_ROOT_PASSWORD have the correct values
 - Under each services, ensure that dbURL has the correct link (especially password and port number)
 
 **RUNNING THE SERVICE(S)**
