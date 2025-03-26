@@ -11,9 +11,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copying files from within placing-order directory (atomic services)
-COPY ../customer-service /app/atomic/customer-service/
-COPY ../item-service /app/atomic/item-service/
-COPY ../order /app/atomic/order/
+# COPY ./customer-service /app/atomic/customer-service/
+# COPY ./item-service /app/atomic/item-service/
+# COPY ./order /app/atomic/order/
 COPY . /app/composite/placing-order/
 
 # Expose the port that the Flask app will run on
