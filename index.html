@@ -16,7 +16,7 @@
 </style>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-white bg-white">
+    <!-- <nav class="navbar navbar-expand-lg navbar-white bg-white">
         <div class="container">
             <a class="navbar-brand" href="index.html">
                 Nimbus
@@ -29,7 +29,25 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link mx-3" href="stores.html">Stores</a></li>
                     <li class="nav-item"><a class="nav-link mx-3" href="cart.html">My Cart</a></li>
-                    <li class="nav-item"><a class="btn btn-outline-dark mx-3" href="orders.html">My Orders</a></li>
+                    <li class="nav-item"><a class="btn btn-outline-dark mx-3" id="auth-button" href="orders.html">My Orders</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav> -->
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-white bg-white">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                Nimbus
+                <img src="assets/logo.png" alt="Logo" width="30" height="24" class="d-inline-block align-text-top">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <!-- This will be completely replaced by the JavaScript -->
                 </ul>
             </div>
         </div>
@@ -60,5 +78,63 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+            const customerData = JSON.parse(sessionStorage.getItem('customer') || '{}');
+            const navItemsContainer = document.getElementById('navbarNav').querySelector('.navbar-nav');
+            
+            // Clear existing nav items
+            navItemsContainer.innerHTML = '';
+            
+            if (isLoggedIn) {
+                // User is logged in - show full menu
+                navItemsContainer.innerHTML = `
+                    <li class="nav-item"><a class="nav-link mx-3" href="stores.html">Stores</a></li>
+                    <li class="nav-item"><a class="nav-link mx-3" href="cart.html">My Cart</a></li>
+                    <li class="nav-item"><a class="btn btn-outline-dark mx-3" href="orders.html">My Orders</a></li>
+                `;
+                
+                // // Add logout functionality
+                // document.getElementById('logout-btn').addEventListener('click', function() {
+                //     sessionStorage.removeItem('isLoggedIn');
+                //     sessionStorage.removeItem('customer');
+                //     window.location.href = 'index.html';
+                // });
+            } else {
+                // User is not logged in - show only Login
+                navItemsContainer.innerHTML = `
+                    <li class="nav-item">
+                        <a class="btn btn-outline-dark mx-3" href="login.html">Login</a>
+                    </li>
+                `;
+            }
+            
+            // Update "Order Now" button behavior
+            const orderNowBtn = document.querySelector('.order-btn');
+            if (orderNowBtn) {
+                orderNowBtn.addEventListener('click', function(e) {
+                    if (!isLoggedIn) {
+                        e.preventDefault();
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    // If logged in, default link behavior will proceed to stores.html
+                });
+                
+                // Visual indication of where the button will take you
+                orderNowBtn.href = isLoggedIn ? 'stores.html' : 'login.html';
+            }
+            
+            // Optional: Add customer name display if logged in
+            if (isLoggedIn && customerData.Name) {
+                const navbar = document.querySelector('.navbar');
+                const welcomeMsg = document.createElement('div');
+                welcomeMsg.className = 'ms-auto me-3';
+                welcomeMsg.textContent = `Welcome, ${customerData.Name}`;
+                navbar.insertBefore(welcomeMsg, navItemsContainer.parentElement);
+            }
+        });
+    </script>
 </body>
 </html>

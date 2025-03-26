@@ -15,13 +15,13 @@ DOCKER_MODE = os.environ.get('DOCKER_MODE', 'true').lower() == 'true'
 # Set base hostnames based on environment
 if DOCKER_MODE:
     print("Running in Docker mode with container hostnames")
-    ORDER_HOST = "order:5010"
+    ORDER_HOST = "order:5004"
     STORE_HOST = "store:5003"
     DRONE_NAVIGATION_HOST = "drone-navigation:5200"
     NOTIFICATION_HOST = "notification:5300"
 else:
     print("Running in local mode with localhost")
-    ORDER_HOST = "localhost:5010"
+    ORDER_HOST = "localhost:5004"
     STORE_HOST = "localhost:5003"
     DRONE_NAVIGATION_HOST = "localhost:5200"
     NOTIFICATION_HOST = "localhost:5300"

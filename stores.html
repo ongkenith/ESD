@@ -49,85 +49,14 @@
         <p>Browse and order from our wide selection of products.</p>
     </header>
 
-    <!-- Product Cards Section -->
-    <section id="stores" class="py-5">
-        <div class="container">
-            <div class="row g-4">
-                <!-- Product Card 1 -->
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <img src="https://via.placeholder.com/300x200.png?text=Drone+Camera+1" alt="Product 1" class="card-img-top">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Product 1</h5>
-                            <p class="card-text">$299.00</p>
-                            <button class="btn btn-primary add-to-cart-btn">Add to Cart</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product Card 2 -->
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <img src="https://via.placeholder.com/300x200.png?text=Drone+Camera+2" alt="Product 2" class="card-img-top">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Product 2</h5>
-                            <p class="card-text">$399.00</p>
-                            <button class="btn btn-primary add-to-cart-btn">Add to Cart</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product Card 3 -->
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <img src="https://via.placeholder.com/300x200.png?text=Battery+Pack" alt="Product 3" class="card-img-top">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Product 3</h5>
-                            <p class="card-text">$99.00</p>
-                            <button class="btn btn-primary add-to-cart-btn">Add to Cart</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Product Card 4 -->
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <img src="https://via.placeholder.com/300x200.png?text=Battery+Pack" alt="Product 4" class="card-img-top">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Product 4</h5>
-                            <p class="card-text">$99.00</p>
-                            <button class="btn btn-primary add-to-cart-btn">Add to Cart</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Product Card 5 -->
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <img src="https://via.placeholder.com/300x200.png?text=Battery+Pack" alt="Product 5" class="card-img-top">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Product 5</h5>
-                            <p class="card-text">$99.00</p>
-                            <button class="btn btn-primary add-to-cart-btn">Add to Cart</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Product Card 6 -->
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <img src="https://via.placeholder.com/300x200.png?text=Battery+Pack" alt="Product 6" class="card-img-top">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Product 6</h5>
-                            <p class="card-text">$99.00</p>
-                            <button class="btn btn-primary add-to-cart-btn">Add to Cart</button>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+    <!-- Replace the entire <section id="stores"> with this: -->
+<section id="stores" class="py-5">
+    <div class="container">
+        <div class="row g-4" id="stores-container">
+            <!-- Stores will be dynamically inserted here -->
         </div>
-    </section>
+    </div>
+</section>
 
     <!-- Footer -->
     <footer class="footer bg-white text-dark text-left py-3 p-3">
@@ -139,6 +68,44 @@
 
     <!-- JavaScript for Add to Cart Functionality -->
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('http://localhost:5003/store')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const container = document.getElementById('stores-container');
+                    if (data.store && data.store.length > 0) {
+                        data.store.forEach(store => {
+                            container.innerHTML += `
+                                <div class="col-md-4">
+                                    <div class="card shadow-sm">
+                                        <img src="https://via.placeholder.com/300x200.png?text=Store+${store.store_id}" 
+                                            alt="Store ${store.store_id}" class="card-img-top">
+                                        <div class="card-body text-center">
+                                            <h5 class="card-title">Store #${store.store_id}</h5>
+                                            <p class="card-text">Location: ${store.pickup_location}</p>
+                                            <a href="store_products.html?store_id=${store.store_id}" 
+                                            class="btn btn-primary">View Products</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        container.innerHTML = '<p class="text-center">No stores found</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching stores:', error);
+                    document.getElementById('stores-container').innerHTML = 
+                        '<p class="text-center">Error loading stores. Please try again later.</p>';
+                });
+        });
+
         const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
 
         // Add event listeners to "Add to Cart" buttons
