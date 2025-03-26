@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    environ.get("dbURL") or "mysql+mysqlconnector://root:root@localhost:8889/my_database"
+    environ.get("dbURL") or "mysql+mysqlconnector://root@localhost:5003/my_database"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle': 299}
@@ -26,6 +26,16 @@ def get_store(store_id):
     if store:
         return jsonify({"store_id": store.store_id, "pickup_location": store.pickup_location})
     return jsonify({"error": "Store not found"}), 404
+
+@app.route('/store', methods=['GET'])
+def get_all_stores():
+    stores = Store.query.all()
+    if stores:
+        return jsonify({"store": [
+            {"store_id": s.store_id, "pickup_location": s.pickup_location} 
+            for s in stores
+        ]})
+    return jsonify({"error": "No stores found"}), 404
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5003, debug=True)
