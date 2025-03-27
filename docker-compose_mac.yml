@@ -38,7 +38,7 @@ services:
     ports:
       - "5006:5006"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:8889/my_database
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
     depends_on:
       db:
         condition: service_healthy
@@ -49,7 +49,7 @@ services:
     ports:
       - "5001:5001"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:8889/my_database
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
     depends_on:
       db:
         condition: service_healthy
@@ -60,7 +60,7 @@ services:
     ports:
       - "5002:5002"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:8889/my_database
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
     depends_on:
       db:
         condition: service_healthy
@@ -71,7 +71,7 @@ services:
     ports:
       - "5003:5003"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:8889/my_database
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
     depends_on:
       db:
         condition: service_healthy
@@ -82,7 +82,7 @@ services:
     ports:
       - "5004:5004"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:8889/my_database
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
     depends_on:
       db:
         condition: service_healthy
@@ -93,7 +93,7 @@ services:
     ports:
       - "5005:5005"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:8889/my_database
+      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
     depends_on:
       db:
         condition: service_healthy
@@ -107,9 +107,17 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_QUEUE: notification_queue
+      EMAIL_ENABLED: "true"
+      EMAIL_HOST: "smtp.mailersend.net"
+      EMAIL_PORT: "587"
+      EMAIL_USER: "MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net"
+      EMAIL_PASSWORD: "mssp.c15zPmM.3zxk54vnek6ljy6v.175bFNr"
+      EMAIL_FROM: "MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net"
+      EMAIL_FROM_NAME: "Drone Delivery Service"
+      MAILERSEND_API_KEY: "mlsn.6bdfb137652a12742bf620598b7374f59e91fb2f64b88e42636680365ffb92fc"
+      USE_MAILERSEND_API: "true"
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - rabbitmq
 
   # Composite services
   condition-check:
@@ -151,3 +159,4 @@ networks:
   default:
     name: my_app_network
     driver: bridge
+    external: false

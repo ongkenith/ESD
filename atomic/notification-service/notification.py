@@ -5,6 +5,11 @@ import json
 import pika
 import threading
 import time
+import smtplib
+import ssl
+import requests
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 CORS(app)
@@ -14,25 +19,195 @@ RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbitmq')
 RABBITMQ_PORT = int(os.environ.get('RABBITMQ_PORT', 5672))
 RABBITMQ_QUEUE = os.environ.get('RABBITMQ_QUEUE', 'notification_queue')
 
+# Email settings
+EMAIL_ENABLED = os.environ.get('EMAIL_ENABLED', 'false').lower() == 'true'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.mailersend.net')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USER = os.environ.get('EMAIL_USER', 'MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net')
+EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD', 'mssp.c15zPmM.3zxk54vnek6ljy6v.175bFNr')
+EMAIL_FROM = os.environ.get('EMAIL_FROM', 'MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net')
+EMAIL_FROM_NAME = os.environ.get('EMAIL_FROM_NAME', 'Drone Delivery Service')
+
+# MailerSend API key (if using API instead of SMTP)
+MAILERSEND_API_KEY = os.environ.get('MAILERSEND_API_KEY', 'mlsn.6bdfb137652a12742bf620598b7374f59e91fb2f64b88e42636680365ffb92fc')
+USE_MAILERSEND_API = os.environ.get('USE_MAILERSEND_API', 'true').lower() == 'true'
+
 # Function to simulate sending SMS
 def send_sms(phone_number, message):
     print(f"Simulating SMS sent to {phone_number}: {message}")
     # In a real implementation, you would integrate with an SMS provider like Twilio
     return True
 
+# Function to send an email using SMTP
+def send_email_smtp(to_email, subject, message):
+    try:
+        if not EMAIL_ENABLED:
+            print(f"Email is disabled. Would have sent to {to_email}")
+            return True
+            
+        print(f"Sending email via SMTP to {to_email}")
+        
+        # Create email message
+        msg = MIMEMultipart('alternative')
+        msg['From'] = f"{EMAIL_FROM_NAME} <{EMAIL_FROM}>"
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        
+        # Create the HTML content
+        html_content = f"""
+        <html>
+        <body>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+                <h2 style="color: #333;">Drone Delivery Notification</h2>
+                <p style="font-size: 16px; line-height: 1.5;">{message}</p>
+                <p style="font-size: 14px; color: #666; margin-top: 30px;">Thank you for using our drone delivery service!</p>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999;">
+                    <p>This is an automated message. Please do not reply to this email.</p>
+                    <p>© 2023 Drone Delivery Service</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Create plain text version
+        text_content = f"""
+        Drone Delivery Notification
+
+        {message}
+
+        Thank you for using our drone delivery service!
+        
+        This is an automated message. Please do not reply to this email.
+        """
+        
+        # Attach parts
+        part1 = MIMEText(text_content, 'plain')
+        part2 = MIMEText(html_content, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        # Connect to SMTP server
+        context = ssl.create_default_context()
+        with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as server:
+            server.ehlo()
+            server.starttls(context=context)
+            server.ehlo()
+            server.login(EMAIL_USER, EMAIL_PASSWORD)
+            server.sendmail(EMAIL_FROM, to_email, msg.as_string())
+            
+        print(f"Email successfully sent to {to_email}")
+        return True
+        
+    except Exception as e:
+        print(f"Failed to send email via SMTP: {str(e)}")
+        return False
+
+# Function to send an email using MailerSend API
+def send_email_api(to_email, subject, message, to_name="Customer"):
+    try:
+        if not EMAIL_ENABLED:
+            print(f"Email is disabled. Would have sent to {to_email}")
+            return True
+            
+        print(f"Sending email via MailerSend API to {to_email}")
+        
+        # MailerSend API endpoint
+        url = "https://api.mailersend.com/v1/email"
+        
+        # Prepare the headers
+        headers = {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+            "Authorization": f"Bearer {MAILERSEND_API_KEY}"
+        }
+        
+        # Create the HTML content
+        html_content = f"""
+        <html>
+        <body>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+                <h2 style="color: #333;">Drone Delivery Notification</h2>
+                <p style="font-size: 16px; line-height: 1.5;">{message}</p>
+                <p style="font-size: 14px; color: #666; margin-top: 30px;">Thank you for using our drone delivery service!</p>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999;">
+                    <p>This is an automated message. Please do not reply to this email.</p>
+                    <p>© 2023 Drone Delivery Service</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Create plain text version
+        text_content = f"""
+        Drone Delivery Notification
+
+        {message}
+
+        Thank you for using our drone delivery service!
+        
+        This is an automated message. Please do not reply to this email.
+        """
+        
+        # Prepare the payload
+        payload = {
+            "from": {
+                "email": EMAIL_FROM,
+                "name": EMAIL_FROM_NAME
+            },
+            "to": [
+                {
+                    "email": to_email,
+                    "name": to_name
+                }
+            ],
+            "subject": subject,
+            "text": text_content,
+            "html": html_content
+        }
+        
+        # Convert payload to JSON
+        json_payload = json.dumps(payload)
+        
+        # Send the request
+        response = requests.post(url, headers=headers, data=json_payload)
+        
+        # Check response
+        if response.status_code == 202:
+            print(f"Email successfully sent to {to_email} via API")
+            return True
+        else:
+            print(f"Failed to send email via API. Status code: {response.status_code}")
+            print(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"Failed to send email via API: {str(e)}")
+        return False
+
+# Function to send an email (delegating to SMTP or API method)
+def send_email(to_email, subject, message, to_name="Customer"):
+    if USE_MAILERSEND_API:
+        return send_email_api(to_email, subject, message, to_name)
+    else:
+        return send_email_smtp(to_email, subject, message)
+
 # Function to get customer contact info
 def get_customer_contact(customer_id):
     # This would typically come from a database lookup
-    # For now, we'll simulate it
+    # For now, we'll simulate it with hardcoded data
+    # All customers will use the same email for testing purposes
     customer_data = {
-        1: {"name": "Tina", "phone": "91234567", "email": "tina@email.com"},
-        2: {"name": "Kenny", "phone": "92345678", "email": "kenny@email.com"},
-        3: {"name": "Jordan", "phone": "93456789", "email": "jordan@email.com"},
-        4: {"name": "Jasdev", "phone": "94567890", "email": "jasdev@email.com"},
-        5: {"name": "Zhengjie", "phone": "95678901", "email": "zhengjie@email.com"},
-        6: {"name": "Deshaun", "phone": "96789012", "email": "deshaun@email.com"}
+        1: {"name": "Tina", "phone": "91234567", "email": "shaunwang16@gmail.com"},
+        2: {"name": "Kenny", "phone": "92345678", "email": "shaunwang16@gmail.com"},
+        3: {"name": "Jordan", "phone": "93456789", "email": "shaunwang16@gmail.com"},
+        4: {"name": "Jasdev", "phone": "94567890", "email": "shaunwang16@gmail.com"},
+        5: {"name": "Zhengjie", "phone": "95678901", "email": "shaunwang16@gmail.com"},
+        6: {"name": "Deshaun", "phone": "96789012", "email": "shaunwang16@gmail.com"}
     }
-    return customer_data.get(customer_id, {"name": "Unknown", "phone": "00000000", "email": "unknown@email.com"})
+    # For any customer ID not in the dictionary, return a default with the test email
+    return customer_data.get(customer_id, {"name": "Customer", "phone": "00000000", "email": "shaunwang16@gmail.com"})
 
 # Function to process messages from RabbitMQ
 def callback(ch, method, properties, body):
@@ -50,16 +225,23 @@ def callback(ch, method, properties, body):
         
         customer = get_customer_contact(customer_id)
         phone_number = customer.get('phone')
+        email = customer.get('email')
+        name = customer.get('name')
         
-        if not phone_number:
-            print(f"No phone number found for customer ID {customer_id}")
-            return
+        notification_results = {"sms": False, "email": False}
         
         # Send the SMS
-        send_success = send_sms(phone_number, message)
+        if phone_number:
+            notification_results["sms"] = send_sms(phone_number, message)
+            
+        # Send the email
+        if email:
+            subject = f"Order #{order_id} Status Update"
+            notification_results["email"] = send_email(email, subject, message, name)
         
-        if send_success:
+        if notification_results["sms"] or notification_results["email"]:
             print(f"Successfully sent notification to customer {customer_id} about order {order_id}")
+            print(f"Delivery methods: SMS: {notification_results['sms']}, Email: {notification_results['email']}")
         else:
             print(f"Failed to send notification to customer {customer_id}")
             
@@ -72,7 +254,7 @@ def callback(ch, method, properties, body):
 # Function to start the AMQP consumer thread
 def start_consumer():
     try:
-        print("Attempting to connect to RabbitMQ...")
+        print(f"Attempting to connect to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}...")
         
         # Retry mechanism for connecting to RabbitMQ
         max_retries = 10
@@ -81,20 +263,33 @@ def start_consumer():
         
         while not connected and retry_count < max_retries:
             try:
-                connection = pika.BlockingConnection(
-                    pika.ConnectionParameters(host=RABBITMQ_HOST, port=RABBITMQ_PORT)
+                # Use credentials (in case they're needed)
+                credentials = pika.PlainCredentials('guest', 'guest')
+                parameters = pika.ConnectionParameters(
+                    host=RABBITMQ_HOST, 
+                    port=RABBITMQ_PORT,
+                    credentials=credentials,
+                    connection_attempts=3,
+                    retry_delay=5
                 )
+                connection = pika.BlockingConnection(parameters)
                 connected = True
-            except pika.exceptions.AMQPConnectionError:
+                print(f"Successfully connected to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}")
+            except pika.exceptions.AMQPConnectionError as e:
                 retry_count += 1
                 wait_time = 5
-                print(f"Failed to connect to RabbitMQ. Retry {retry_count}/{max_retries} in {wait_time} seconds...")
+                print(f"Failed to connect to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}. Retry {retry_count}/{max_retries} in {wait_time} seconds...")
+                print(f"Error details: {str(e)}")
+                time.sleep(wait_time)
+            except Exception as e:
+                retry_count += 1
+                wait_time = 5
+                print(f"Unexpected error connecting to RabbitMQ: {str(e)}. Retry {retry_count}/{max_retries} in {wait_time} seconds...")
                 time.sleep(wait_time)
         
         if not connected:
-            raise Exception("Could not connect to RabbitMQ after maximum retries")
+            raise Exception(f"Could not connect to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT} after maximum retries")
         
-        print("Successfully connected to RabbitMQ")
         channel = connection.channel()
         
         # Declare the queue
@@ -109,6 +304,10 @@ def start_consumer():
         
     except Exception as e:
         print(f"Consumer thread error: {str(e)}")
+        print("Will attempt to reconnect in 30 seconds...")
+        time.sleep(30)
+        # Try to restart the consumer
+        start_consumer()
 
 # REST API endpoint for direct notifications (can be used for testing)
 @app.route("/notify", methods=['POST'])
@@ -130,32 +329,47 @@ def notify():
                 
             customer = get_customer_contact(customer_id)
             phone_number = customer.get('phone')
+            email = customer.get('email')
+            name = customer.get('name')
             
-            if not phone_number:
+            if not phone_number and not email:
                 return jsonify({
                     "code": 404,
-                    "message": f"No phone number found for customer ID {customer_id}"
+                    "message": f"No contact information found for customer ID {customer_id}"
                 }), 404
                 
-            # Send the SMS
-            send_success = send_sms(phone_number, message)
+            notification_results = {"sms": False, "email": False}
             
-            if send_success:
+            # Send the SMS
+            if phone_number:
+                notification_results["sms"] = send_sms(phone_number, message)
+            
+            # Send the email
+            if email:
+                subject = f"Order #{order_id} Status Update"
+                notification_results["email"] = send_email(email, subject, message, name)
+            
+            if notification_results["sms"] or notification_results["email"]:
                 return jsonify({
                     "code": 200,
                     "data": {
                         "customer_id": customer_id,
-                        "customer_name": customer.get('name'),
+                        "customer_name": name,
                         "phone_number": phone_number,
+                        "email": email,
                         "message": message,
-                        "order_id": order_id
+                        "order_id": order_id,
+                        "notification_sent": {
+                            "sms": notification_results["sms"],
+                            "email": notification_results["email"]
+                        }
                     },
                     "message": "Notification sent successfully"
                 }), 200
             else:
                 return jsonify({
                     "code": 500,
-                    "message": "Failed to send notification"
+                    "message": "Failed to send notification via any channel"
                 }), 500
                 
         except Exception as e:
@@ -177,17 +391,53 @@ def notify():
 # Health check endpoint
 @app.route("/health", methods=['GET'])
 def health_check():
-    return jsonify(
-        {
-            "message": "Notification Service is healthy."
-        }
-    ), 200
+    # Return basic health info
+    return jsonify({
+        "status": "ok",
+        "service": "notification-service",
+        "email_enabled": EMAIL_ENABLED,
+        "rabbitmq_host": RABBITMQ_HOST,
+        "rabbitmq_queue": RABBITMQ_QUEUE,
+        "use_mailersend_api": USE_MAILERSEND_API
+    }), 200
+
+# Test endpoint for directly testing email sending
+@app.route("/test-email", methods=['GET'])
+def test_email():
+    try:
+        to_email = request.args.get('email', 'shaunwang16@gmail.com')
+        subject = "Test Email from Drone Delivery Service"
+        message = "This is a test email from the Drone Delivery Service notification system."
+        
+        result = send_email(to_email, subject, message, "Test User")
+        
+        if result:
+            return jsonify({
+                "code": 200,
+                "message": f"Test email sent successfully to {to_email}"
+            }), 200
+        else:
+            return jsonify({
+                "code": 500,
+                "message": f"Failed to send test email to {to_email}"
+            }), 500
+    except Exception as e:
+        return jsonify({
+            "code": 500,
+            "message": f"Error sending test email: {str(e)}"
+        }), 500
+
+# Start the consumer thread
+if __name__ != '__main__':
+    consumer_thread = threading.Thread(target=start_consumer)
+    consumer_thread.daemon = True
+    consumer_thread.start()
 
 if __name__ == "__main__":
-    # Start the consumer in a separate thread
+    # For running the Flask app directly
     consumer_thread = threading.Thread(target=start_consumer)
     consumer_thread.daemon = True
     consumer_thread.start()
     
-    print("This is flask for " + os.path.basename(__file__) + " for sending notifications...")
-    app.run(host="0.0.0.0", port=5300, debug=True) 
+    print("Starting Flask server...")
+    app.run(host='0.0.0.0', port=5300) 

@@ -3,12 +3,14 @@ import json
 import sys
 import os
 
-# Check if running in Docker mode
-DOCKER_MODE = os.environ.get('DOCKER_MODE', 'false').lower() == 'true'
+# Force Docker mode since services are running in Docker
+DOCKER_MODE = True
+os.environ['DOCKER_MODE'] = 'true'
+print(f"Running with DOCKER_MODE: {DOCKER_MODE}")
 
 # Set the processing order URL based on environment
 if DOCKER_MODE:
-    PROCESSING_ORDER_URL = "http://processing-order:5400/process_order"
+    PROCESSING_ORDER_URL = "http://localhost:5400/process_order"
 else:
     PROCESSING_ORDER_URL = "http://localhost:5400/process_order"
 
@@ -18,6 +20,7 @@ def test_process_order(order_id=1):
     print(f"\n=== TESTING PROCESS ORDER ENDPOINT ===")
     print(f"URL: {PROCESSING_ORDER_URL}")
     print(f"Order ID: {order_id}")
+    print(f"DOCKER_MODE: {DOCKER_MODE}")
     
     try:
         # Prepare the request payload
