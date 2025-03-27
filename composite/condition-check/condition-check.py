@@ -14,12 +14,12 @@ DOCKER_MODE = os.environ.get('DOCKER_MODE', 'true').lower() == 'true'
 # Set base hostnames based on environment
 if DOCKER_MODE:
     print("Running in Docker mode with container hostnames")
-    DRONE_HOST = "drone:5000"
-    SCHEDULING_HOST = "scheduling:5001"
+    DRONE_HOST = "drone:5006"
+    SCHEDULING_HOST = "scheduling:5005"
 else:
     print("Running in local mode with localhost")
-    DRONE_HOST = "localhost:5000"
-    SCHEDULING_HOST = "localhost:5001"
+    DRONE_HOST = "localhost:5006"
+    SCHEDULING_HOST = "localhost:5005"
 
 # URLs for the microservices
 drone_URL = f"http://{DRONE_HOST}/drone"
