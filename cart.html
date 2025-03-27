@@ -31,6 +31,18 @@
             text-align: end; /* Aligns the button to the right */
             margin-top: 20px;
         }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-control {
+            margin-top: 0.5rem;
+        }
+        .checkout-form {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-top: 2rem;
+        }
     </style>
 </head>
 <body>
@@ -60,30 +72,43 @@
         <p>Review your cart and proceed to checkout.</p>
     </header>
 
-    <!-- Orders Section -->
-    <section id="orders" class="py-5">
-        <div class="container">
-            <h2>Your Cart</h2>
-            <!-- Empty Cart Message -->
-            <p id="empty-cart-message">Your cart is currently empty.</p>
+   <!-- Orders Section -->
+   <section id="orders" class="py-5">
+    <div class="container">
+        <h2>Your Cart</h2>
+        <!-- Empty Cart Message -->
+        <p id="empty-cart-message">Your cart is currently empty.</p>
 
-            <!-- Orders List -->
-            <ul id="orders-list" class="list-group mt-3"></ul> <!-- Orders will be dynamically added here -->
+        <!-- Orders List -->
+        <ul id="orders-list" class="list-group mt-3"></ul>
 
-            <!-- Checkout Button Container -->
-            <div class="checkout-btn-container">
-                <button id="checkout-btn" class="btn btn-success" disabled>Proceed to Checkout</button>
+        <!-- Add this new form section -->
+        <div id="checkout-form" class="checkout-form" style="display: none;">
+            <h3>Delivery Information</h3>
+            <div class="form-group">
+                <label for="user-name">Your Name</label>
+                <input type="text" class="form-control" id="user-name" placeholder="Enter your name" required>
+            </div>
+            <div class="form-group">
+                <label for="delivery-location">Delivery Location</label>
+                <input type="text" class="form-control" id="delivery-location" placeholder="Enter delivery address" required>
             </div>
         </div>
-    </section>
 
-    <!-- Footer -->
-    <footer class="footer bg-white text-dark text-left py-3 p-3">
-        &copy; 2025 Nimbus. All Rights Reserved.
-    </footer>
+        <!-- Checkout Button Container -->
+        <div class="checkout-btn-container">
+            <button id="checkout-btn" class="btn btn-success" disabled>Proceed to Checkout</button>
+        </div>
+    </div>
+</section>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Footer -->
+        <footer class="footer bg-white text-dark text-left py-3 p-3">
+            &copy; 2025 Nimbus. All Rights Reserved.
+        </footer>
+    
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- JavaScript for Retrieving and Displaying Orders -->
     <script>
@@ -91,15 +116,32 @@
         const ordersList = document.getElementById('orders-list');
         const emptyCartMessage = document.getElementById('empty-cart-message');
         const checkoutButton = document.getElementById('checkout-btn');
+        const checkoutForm = document.getElementById('checkout-form');
+        const userNameInput = document.getElementById('user-name');
+        const deliveryLocationInput = document.getElementById('delivery-location');
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         let totalPrice = 0;
 
+        // Function to check if checkout should be enabled
+        function updateCheckoutButtonState() {
+            const hasItems = cart.length > 0;
+            const hasName = userNameInput.value.trim() !== '';
+            const hasLocation = deliveryLocationInput.value.trim() !== '';
+            
+            checkoutButton.disabled = !(hasItems && hasName && hasLocation);
+        }
+
+        // Add event listeners for input fields
+        userNameInput.addEventListener('input', updateCheckoutButtonState);
+        deliveryLocationInput.addEventListener('input', updateCheckoutButtonState);
+
         if (cart.length === 0) {
             emptyCartMessage.style.display = 'block';
+            checkoutForm.style.display = 'none';
             checkoutButton.disabled = true;
         } else {
             emptyCartMessage.style.display = 'none';
-            checkoutButton.disabled = false;
+            checkoutForm.style.display = 'block';
 
             // Calculate total price and display items
             cart.forEach(item => {
@@ -120,17 +162,13 @@
                     </div>
                 `;
 
-                // Replace the remove button event listener with this:
                 const removeButton = cartItem.querySelector('.remove-btn');
                 removeButton.addEventListener('click', function() {
-                    // Get the index of the item to remove
                     const itemIndex = cart.findIndex(i => i.id === item.id);
-                    
                     if (itemIndex !== -1) {
-                        // Create a new array without the item
                         const updatedCart = [...cart.slice(0, itemIndex), ...cart.slice(itemIndex + 1)];
                         localStorage.setItem('cart', JSON.stringify(updatedCart));
-                        location.reload(); // Refresh to update display
+                        location.reload();
                     }
                 });
 
@@ -149,8 +187,25 @@
 
         // Checkout Button Click Event
         checkoutButton.addEventListener('click', function() {
-            alert(`Proceeding to checkout. Total: $${totalPrice.toFixed(2)}`);
-            // Add your checkout logic here
+            const orderDetails = {
+                items: cart,
+                total: totalPrice.toFixed(2),
+                customerName: userNameInput.value.trim(),
+                deliveryLocation: deliveryLocationInput.value.trim(),
+                date: new Date().toISOString()
+            };
+            
+            // Save order to localStorage (you might want to send this to a server in a real app)
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders.push(orderDetails);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            
+            // Clear cart
+            localStorage.removeItem('cart');
+            
+            alert(`Order placed successfully!\nTotal: $${totalPrice.toFixed(2)}\nDelivery to: ${deliveryLocationInput.value.trim()}`);
+            // Redirect to orders page or home page
+            window.location.href = 'orders.html';
         });
     </script>
 </body>
