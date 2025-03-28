@@ -58,7 +58,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link mx-3" href="stores.html">Stores</a></li>
+                    <li class="nav-item"><a class="nav-link mx-3" href="store.html">Store</a></li>
                     <li class="nav-item"><a class="nav-link mx-3" href="cart.html">My Cart</a></li>
                     <li class="nav-item"><a class="btn btn-outline-dark mx-3" href="orders.html">My Orders</a></li>
                 </ul>
@@ -84,10 +84,14 @@
 
         <!-- Add this new form section -->
         <div id="checkout-form" class="checkout-form" style="display: none;">
-            <h3>Delivery Information</h3>
+            <h3 class="pb-2">Delivery Information</h3>
             <div class="form-group">
                 <label for="user-name">Your Name</label>
                 <input type="text" class="form-control" id="user-name" placeholder="Enter your name" required>
+            </div>
+            <div class="form-group">
+                <label for="user-email">Your Email</label>
+                <input type="text" class="form-control" id="user-email" placeholder="Enter email address" required>
             </div>
             <div class="form-group">
                 <label for="delivery-location">Delivery Location</label>
@@ -118,6 +122,7 @@
         const checkoutButton = document.getElementById('checkout-btn');
         const checkoutForm = document.getElementById('checkout-form');
         const userNameInput = document.getElementById('user-name');
+        const userEmailInput = document.getElementById('user-email');
         const deliveryLocationInput = document.getElementById('delivery-location');
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         let totalPrice = 0;
