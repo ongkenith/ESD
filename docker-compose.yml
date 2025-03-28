@@ -1,0 +1,129 @@
+version: '3'
+
+services:
+  # Database
+    
+  # Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # RabbitMQ standard port
+      - "15672:15672" # RabbitMQ management console
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Atomic services
+  drone:
+    build:
+      context: ./atomic/drone
+    ports:
+      - "5006:5006"
+    environment:
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+
+  customer:
+    build:
+      context: ./atomic/customer-service
+    ports:
+      - "5001:5001"
+    environment:
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+
+  item:
+    build:
+      context: ./atomic/item-service
+    ports:
+      - "5002:5002"
+    environment:
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+
+  store:
+    build:
+      context: ./atomic/store-service
+    ports:
+      - "5003:5003"
+    environment:
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+
+  order:
+    build:
+      context: ./atomic/order
+    ports:
+      - "5004:5004"
+    environment:
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+
+  scheduling:
+    build:
+      context: ./atomic/scheduling
+    ports:
+      - "5005:5005"
+    environment:
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+
+  notification:
+    build:
+      context: ./atomic/notification-service
+    ports:
+      - "5300:5300"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_QUEUE: notification_queue
+      EMAIL_ENABLED: "true"
+      EMAIL_HOST: "smtp.mailersend.net"
+      EMAIL_PORT: "587"
+      EMAIL_USER: "MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net"
+      EMAIL_PASSWORD: "mssp.c15zPmM.3zxk54vnek6ljy6v.175bFNr"
+      EMAIL_FROM: "MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net"
+      EMAIL_FROM_NAME: "Drone Delivery Service"
+      MAILERSEND_API_KEY: "mlsn.6bdfb137652a12742bf620598b7374f59e91fb2f64b88e42636680365ffb92fc"
+      USE_MAILERSEND_API: "true"
+    depends_on:
+      - rabbitmq
+
+  # Composite services
+  condition-check:
+    build:
+      context: ./composite/condition-check
+    ports:
+      - "5100:5100"
+    depends_on:
+      - drone
+      - scheduling
+
+  drone-navigation:
+    build:
+      context: ./composite/drone-navigation
+    ports:
+      - "5200:5200"
+    depends_on:
+      - condition-check
+      
+  # New Processing Order service
+  processing-order:
+    build:
+      context: ./composite/processing-order
+    ports:
+      - "5400:5400"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_QUEUE: notification_queue
+    depends_on:
+      - order
+      - store
+      - item
+      - drone-navigation
+      - rabbitmq
+      - notification
+
+networks:
+  default:
+    name: my_app_network
+    driver: bridge
+    external: false

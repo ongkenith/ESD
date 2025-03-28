@@ -1,6 +1,6 @@
-FROM python:3.9
-WORKDIR /app
-COPY . .
+FROM python:3-slim
+WORKDIR /usr/src/app
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-EXPOSE 5002
+COPY ./item.py .
 CMD ["python", "./item.py"]
