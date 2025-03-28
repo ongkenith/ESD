@@ -38,7 +38,7 @@ services:
     ports:
       - "5006:5006"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
     depends_on:
       db:
         condition: service_healthy
@@ -49,7 +49,7 @@ services:
     ports:
       - "5001:5001"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
     depends_on:
       db:
         condition: service_healthy
@@ -60,7 +60,7 @@ services:
     ports:
       - "5002:5002"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
     depends_on:
       db:
         condition: service_healthy
@@ -71,7 +71,7 @@ services:
     ports:
       - "5003:5003"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
     depends_on:
       db:
         condition: service_healthy
@@ -82,7 +82,7 @@ services:
     ports:
       - "5004:5004"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
     depends_on:
       db:
         condition: service_healthy
@@ -93,7 +93,7 @@ services:
     ports:
       - "5005:5005"
     environment:
-      dbURL: mysql+mysqlconnector://root:root@db:3306/my_database
+      dbURL: postgresql://postgres.fnkjhzstrrrkcrsibpuy:Stinkyrat123!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
     depends_on:
       db:
         condition: service_healthy

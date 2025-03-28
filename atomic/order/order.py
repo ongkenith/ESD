@@ -29,10 +29,10 @@ class Order(db.Model):
     __table_args__ = {'quote': True}  # Add this to handle case-sensitive table names
 
     order_id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey(
+    Customer_ID = db.Column(db.Integer, db.ForeignKey(
         'Customer.Customer_ID', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     order_date = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    drone_id = db.Column(db.Integer, db.ForeignKey(
+    droneID = db.Column(db.Integer, db.ForeignKey(
         'Drone.DroneID', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     total_amount = db.Column(db.Numeric(10, 2))
     payment_status = db.Column(db.Boolean)
@@ -42,9 +42,9 @@ class Order(db.Model):
     def json(self):
         dto = {
             'order_id': self.order_id,
-            'customer_id': self.customer_id,
+            'Customer_ID': self.Customer_ID,
             'order_date': self.order_date,
-            'drone_id': self.drone_id,
+            'drone_id': self.droneID,
             'total_amount': self.total_amount,
             'payment_status': self.payment_status,
             'deliveryLocation': self.deliveryLocation,
@@ -121,8 +121,8 @@ def find_by_order_id(order_id):
 
 @app.route("/order", methods=['POST'])
 def create_order():
-    customer_id = request.json.get('customer_id', None)
-    order = Order(customer_id=customer_id, order_status='PENDING FOR DRONE')
+    Customer_ID = request.json.get('Customer_ID', None)
+    order = Order(Customer_ID=Customer_ID, order_status='PENDING FOR DRONE')
 
     cart_item = request.json.get('cart_item')
     for item in cart_item:
@@ -154,7 +154,8 @@ def update_order(order_id):
     try:
         # Try to get the order using raw SQL to bypass ORM foreign key constraints
         # First check if the order exists
-        query = text("SELECT * FROM `Order` WHERE Order_ID = :order_id")
+        # changed this to fit postgresql format
+        query = text('SELECT * FROM "Order" WHERE "Order_ID" = :order_id')
         result = db.session.execute(query, {"order_id": order_id})
         order_data = result.fetchone()
         
@@ -184,11 +185,11 @@ def update_order(order_id):
             order_json = {
                 "order_id": updated_order.Order_ID,
                 "order_date": updated_order.Order_Date.strftime("%Y-%m-%d %H:%M:%S") if updated_order.Order_Date else None,
-                "drone_id": updated_order.Drone_ID,
+                "drone_id": updated_order.droneID,
                 "total_amount": float(updated_order.Total_Amount) if updated_order.Total_Amount else None,
                 "payment_status": updated_order.Payment_Status,
                 "deliveryLocation": updated_order.DeliveryLocation,
-                "customer_id": updated_order.Customer_ID,
+                "Customer_ID": updated_order.Customer_ID,
                 "order_status": updated_order.Order_Status
             }
             

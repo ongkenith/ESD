@@ -19,7 +19,7 @@ class Item(db.Model):
     __tablename__ = 'Item'
     Item_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     Name = db.Column(db.String(255), nullable=False)
-    Store_ID = db.Column(db.String(255), nullable=False)
+    store_id = db.Column(db.String(255), nullable=False)
     Price = db.Column(db.Float, nullable=False)
     
 @app.route('/items', methods=['GET'])
@@ -27,7 +27,7 @@ def get_all_items():
     items = Item.query.all()
     if items:
         return jsonify({"items": [
-            {"Item_ID": i.Item_ID, "Name": i.Name, "Store_ID": i.Store_ID, "Price": i.Price} 
+            {"Item_ID": i.Item_ID, "Name": i.Name, "Store_ID": i.store_id, "Price": i.Price} 
             for i in items
         ]})
     return jsonify({"error": "No items found"}), 404
@@ -44,7 +44,7 @@ def create_item():
     data = request.json
     new_item = Item(
         Name=data['Name'],
-        Store_ID=data['Store_ID'],
+        store_id=data['Store_ID'],
         Price=data['Price']
     )
     db.session.add(new_item)

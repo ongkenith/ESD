@@ -36,10 +36,10 @@ class Order(db.Model):
     
     Order_ID = db.Column(db.Integer, primary_key=True)
     Order_Date = db.Column(db.DateTime, nullable=False)
-    Drone_ID = db.Column(db.Integer)
+    droneID = db.Column(db.Integer)
     Total_Amount = db.Column(db.Float)
     Payment_Status = db.Column(db.Boolean)
-    DeliveryLocation = db.Column(db.Integer)
+    deliveryLocation = db.Column(db.Integer)
     Customer_ID = db.Column(db.Integer)
     Order_Status = db.Column(db.String(255))
     
@@ -55,7 +55,7 @@ class Store(db.Model):
 class Drone(db.Model):
     __tablename__ = 'Drone'
     
-    DroneID = db.Column(db.Integer, primary_key=True)
+    droneID = db.Column(db.Integer, primary_key=True)
     Drone_Status = db.Column(db.String(50))
 
 # Main Scheduling model
@@ -69,13 +69,13 @@ class Scheduling(db.Model):
 
     # Define columns with matching case to SQL schema
     PickUpLocation = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
-    DeliveryLocation = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
-    DroneID = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
+    deliveryLocation = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
+    droneID = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
     
     # Define foreign keys as relationships instead of constraints
     pickup_location = db.relationship('Store', foreign_keys=[PickUpLocation])
-    delivery_location = db.relationship('Order', foreign_keys=[DeliveryLocation])
-    drone = db.relationship('Drone', foreign_keys=[DroneID])
+    delivery_location = db.relationship('Order', foreign_keys=[deliveryLocation])
+    drone = db.relationship('Drone', foreign_keys=[droneID])
     
     # Specify all foreign key constraints with proper table and column names
     __table_args__ = (
@@ -86,14 +86,14 @@ class Scheduling(db.Model):
             onupdate='CASCADE'
         ),
         db.ForeignKeyConstraint(
-            ['DeliveryLocation'], 
+            ['deliveryLocation'], 
             ['Order.Order_ID'],
             ondelete='CASCADE',
             onupdate='CASCADE'
         ),
         db.ForeignKeyConstraint(
-            ['DroneID'], 
-            ['Drone.DroneID'],
+            ['droneID'], 
+            ['Drone.droneID'],
             ondelete='CASCADE',
             onupdate='CASCADE'
         ),
@@ -105,8 +105,8 @@ class Scheduling(db.Model):
             'schedule_id': self.Schedule_ID,
             'schedule_name': self.ScheduleName,
             'schedule_date': self.ScheduleDateTime,
-            'drone_id': self.DroneID,
-            'deliveryLocation': self.DeliveryLocation,
+            'drone_id': self.droneID,
+            'deliveryLocation': self.deliveryLocation,
             'pickUpLocation': self.PickUpLocation,
             'weatherCheck': self.WeatherCheck
         }
@@ -115,7 +115,7 @@ class Scheduling(db.Model):
 
 @app.route("/schedule/<string:drone_id>")
 def find_by_drone_id(drone_id):
-    schedule = db.session.scalar(db.select(Scheduling).filter_by(DroneID=int(drone_id)))
+    schedule = db.session.scalar(db.select(Scheduling).filter_by(droneID=int(drone_id)))
     if schedule:
         return jsonify(
             {
@@ -142,9 +142,9 @@ def create_schedule():
     
     # Updated to use the correct field names that match the database schema
     schedule = Scheduling(
-        DroneID=drone_id, 
+        droneID=drone_id, 
         ScheduleName='STH STH STH', 
-        DeliveryLocation=deliveryLocation, 
+        deliveryLocation=deliveryLocation, 
         PickUpLocation=pickUpLocation, 
         WeatherCheck=weatherCheck
     )
