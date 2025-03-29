@@ -28,7 +28,7 @@
             margin-top: 20px;
         }
         .checkout-btn-container {
-            text-align: end; /* Aligns the button to the right */
+            text-align: end;
             margin-top: 20px;
         }
         .form-group {
@@ -42,6 +42,12 @@
             padding: 1.5rem;
             border-radius: 0.5rem;
             margin-top: 2rem;
+        }
+        #postal-code {
+            max-width: 200px;
+        }
+        input:valid {
+            border-color: #28a745;
         }
     </style>
 </head>
@@ -72,73 +78,71 @@
         <p>Review your cart and proceed to checkout.</p>
     </header>
 
-   <!-- Orders Section -->
-   <section id="orders" class="py-5">
-    <div class="container">
-        <h2>Your Cart</h2>
-        <!-- Empty Cart Message -->
-        <p id="empty-cart-message">Your cart is currently empty.</p>
+    <!-- Orders Section -->
+    <section id="orders" class="py-5">
+        <div class="container">
+            <h2>Your Cart</h2>
+            <p id="empty-cart-message">Your cart is currently empty.</p>
+            <ul id="orders-list" class="list-group mt-3"></ul>
 
-        <!-- Orders List -->
-        <ul id="orders-list" class="list-group mt-3"></ul>
+            <div id="checkout-form" class="checkout-form" style="display: none;">
+                <h3 class="pb-2">Delivery Information</h3>
+                <div class="form-group">
+                    <label for="user-name">Your Name</label>
+                    <input type="text" class="form-control" id="user-name" placeholder="Enter your name" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-email">Your Email</label>
+                    <input type="email" class="form-control" id="user-email" placeholder="Enter email address" required>
+                </div>
+                <div class="form-group">
+                    <label for="postal-code">Postal Code</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="postal-code" 
+                           pattern="[0-9]{6}" 
+                           title="Please enter postal code"
+                           placeholder="Enter postal code" 
+                           required>
+                </div>
+            </div>
 
-        <!-- Add this new form section -->
-        <div id="checkout-form" class="checkout-form" style="display: none;">
-            <h3 class="pb-2">Delivery Information</h3>
-            <div class="form-group">
-                <label for="user-name">Your Name</label>
-                <input type="text" class="form-control" id="user-name" placeholder="Enter your name" required>
-            </div>
-            <div class="form-group">
-                <label for="user-email">Your Email</label>
-                <input type="text" class="form-control" id="user-email" placeholder="Enter email address" required>
-            </div>
-            <div class="form-group">
-                <label for="delivery-location">Delivery Location</label>
-                <input type="text" class="form-control" id="delivery-location" placeholder="Enter delivery address" required>
+            <div class="checkout-btn-container">
+                <button id="checkout-btn" class="btn btn-success" disabled>Proceed to Checkout</button>
             </div>
         </div>
+    </section>
 
-        <!-- Checkout Button Container -->
-        <div class="checkout-btn-container">
-            <button id="checkout-btn" class="btn btn-success" disabled>Proceed to Checkout</button>
-        </div>
-    </div>
-</section>
+    <!-- Footer -->
+    <footer class="footer bg-white text-dark text-left py-3 p-3">
+        &copy; 2025 Nimbus. All Rights Reserved.
+    </footer>
 
-        <!-- Footer -->
-        <footer class="footer bg-white text-dark text-left py-3 p-3">
-            &copy; 2025 Nimbus. All Rights Reserved.
-        </footer>
-    
-        <!-- Bootstrap JS -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- JavaScript for Retrieving and Displaying Orders -->
+    <!-- JavaScript for Cart Functionality -->
     <script>
-        // Retrieve cart from localStorage
         const ordersList = document.getElementById('orders-list');
         const emptyCartMessage = document.getElementById('empty-cart-message');
         const checkoutButton = document.getElementById('checkout-btn');
         const checkoutForm = document.getElementById('checkout-form');
         const userNameInput = document.getElementById('user-name');
         const userEmailInput = document.getElementById('user-email');
-        const deliveryLocationInput = document.getElementById('delivery-location');
+        const postalCodeInput = document.getElementById('postal-code');
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         let totalPrice = 0;
 
-        // Function to check if checkout should be enabled
         function updateCheckoutButtonState() {
             const hasItems = cart.length > 0;
             const hasName = userNameInput.value.trim() !== '';
-            const hasLocation = deliveryLocationInput.value.trim() !== '';
+            const hasValidPostalCode = /^\d{6}$/.test(postalCodeInput.value);
             
-            checkoutButton.disabled = !(hasItems && hasName && hasLocation);
+            checkoutButton.disabled = !(hasItems && hasName && hasValidPostalCode);
         }
 
-        // Add event listeners for input fields
         userNameInput.addEventListener('input', updateCheckoutButtonState);
-        deliveryLocationInput.addEventListener('input', updateCheckoutButtonState);
+        postalCodeInput.addEventListener('input', updateCheckoutButtonState);
 
         if (cart.length === 0) {
             emptyCartMessage.style.display = 'block';
@@ -148,7 +152,6 @@
             emptyCartMessage.style.display = 'none';
             checkoutForm.style.display = 'block';
 
-            // Calculate total price and display items
             cart.forEach(item => {
                 const itemTotal = parseFloat(item.total);
                 totalPrice += itemTotal;
@@ -180,7 +183,6 @@
                 ordersList.appendChild(cartItem);
             });
 
-            // Add total price display
             const totalItem = document.createElement('li');
             totalItem.classList.add('list-group-item', 'bg-light');
             totalItem.innerHTML = `
@@ -190,27 +192,45 @@
             ordersList.appendChild(totalItem);
         }
 
-        // Checkout Button Click Event
         checkoutButton.addEventListener('click', function() {
-            const orderDetails = {
-                items: cart,
-                total: totalPrice.toFixed(2),
-                customerName: userNameInput.value.trim(),
-                deliveryLocation: deliveryLocationInput.value.trim(),
-                date: new Date().toISOString()
-            };
+            const postalCode = postalCodeInput.value;
             
-            // Save order to localStorage (you might want to send this to a server in a real app)
-            const orders = JSON.parse(localStorage.getItem('orders')) || [];
-            orders.push(orderDetails);
-            localStorage.setItem('orders', JSON.stringify(orders));
-            
-            // Clear cart
-            localStorage.removeItem('cart');
-            
-            alert(`Order placed successfully!\nTotal: $${totalPrice.toFixed(2)}\nDelivery to: ${deliveryLocationInput.value.trim()}`);
-            // Redirect to orders page or home page
-            window.location.href = 'orders.html';
+            if (!/^\d{6}$/.test(postalCode)) {
+                alert('Please enter a valid 6-digit postal code');
+                return;
+            }
+
+            const customer = JSON.parse(sessionStorage.getItem('customer'));
+            if (!customer) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            fetch('http://localhost:5004/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Customer_ID: customer.Customer_ID,
+                    postalCode: postalCode,
+                    cart_item: cart.map(item => ({
+                        item_id: item.id,
+                        quantity: item.quantity
+                    }))
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 201) {
+                    localStorage.removeItem('cart');
+                    window.location.href = 'orders.html';
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to place order: ' + error.message);
+            });
         });
     </script>
 </body>
