@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # COPY ./order /app/atomic/order/
 COPY . /app/composite/placing-order/
 
-# Expose the port that the Flask app will run on
-EXPOSE 5000
+# # Expose the port that the Flask app will run on
+# EXPOSE 5500
 
 # Define the command to run the app
 CMD ["python", "/app/composite/placing-order/placing_order.py"]
