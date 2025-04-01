@@ -36,7 +36,7 @@ def get_all_items():
 def get_item(item_id):
     item = Item.query.get(item_id)
     if item:
-        return jsonify({"Item_ID": item.Item_ID, "Name": item.Name, "Store_ID": item.Store_ID, "Price": item.Price})
+        return jsonify({"Item_ID": item.Item_ID, "Name": item.Name, "Store_ID": item.store_id, "Price": item.Price})
     return jsonify({"error": "Item not found"}), 404
 
 @app.route('/items', methods=['POST'])
@@ -48,7 +48,11 @@ def create_item():
         Price=data['Price']
     )
     db.session.add(new_item)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except:
+        return jsonify({"Status": "Failed"}), 404
+    
     return jsonify({"Item_ID": new_item.Item_ID, "Status": "Created"})
 
 if __name__ == '__main__':
