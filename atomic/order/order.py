@@ -9,7 +9,18 @@ from flask_sqlalchemy import SQLAlchemy
 from os import environ
 import os
 from flasgger import Swagger
-from sqlalchemy import text
+from sqlalchemy import text, MetaData
+
+# Define a naming convention for the constraints to match MySQL's behavior
+convention = {
+  "ix": 'ix_%(column_0_label)s',
+  "uq": "uq_%(table_name)s_%(column_0_name)s",
+  "ck": "ck_%(table_name)s_%(constraint_name)s",
+  "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+  "pk": "pk_%(table_name)s"
+}
+
+metadata = MetaData(naming_convention=convention)
 
 app = Flask(__name__)
 
@@ -23,21 +34,52 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle': 299}
 
 db = SQLAlchemy(app)
 
+class Customer(db.Model):
+    __tablename__ = 'Customer'
+    Customer_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    Name = db.Column(db.String(255), nullable=False)
+    Email = db.Column(db.String(255), unique=True, nullable=False)
+    Mobile_No = db.Column(db.String(8), nullable=False)
+
+class Drone(db.Model):
+    __tablename__ = 'Drone' # database table name
+
+    droneID = db.Column(db.Integer, primary_key=True)
+    drone_status = db.Column(db.String(50), nullable=False)
+
+class Item(db.Model):
+    __tablename__ = 'Item'
+    Item_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    Name = db.Column(db.String(255), nullable=False)
+    store_id = db.Column(db.String(255), nullable=False)
+    Price = db.Column(db.Float, nullable=False)
 
 class Order(db.Model):
     __tablename__ = 'Order'
-    __table_args__ = {'quote': True}  # Add this to handle case-sensitive table names
 
     order_id = db.Column(db.Integer, primary_key=True)
-    Customer_ID = db.Column(db.Integer, db.ForeignKey(
-        'Customer.Customer_ID', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+    Customer_ID = db.Column(db.Integer, nullable=False)
     order_date = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    droneID = db.Column(db.Integer, db.ForeignKey(
-        'Drone.DroneID', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+    droneID = db.Column(db.Integer, nullable=False)
     total_amount = db.Column(db.Numeric(10, 2))
     payment_status = db.Column(db.Boolean)
     deliveryLocation = db.Column(db.Integer)
     order_status = db.Column(db.String(255))
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            ['droneID'], 
+            ['Drone.droneID'],
+            ondelete='CASCADE',
+            onupdate='CASCADE'
+        ), 
+        db.ForeignKeyConstraint(
+            ['Customer_ID'], 
+            ['Customer.Customer_ID'],
+            ondelete='CASCADE',
+            onupdate='CASCADE'
+        ), 
+    {'quote': True})  # Add this to handle case-sensitive table names
 
     def json(self):
         dto = {
@@ -60,14 +102,26 @@ class Order(db.Model):
 
 class Order_Item(db.Model):
     __tablename__ = 'Order_Item'
-    __table_args__ = {'quote': True}  # Add this to handle case-sensitive table names
 
     id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.ForeignKey(
-        'Order.order_id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False, index=True)
-    item_id = db.Column(db.Integer, db.ForeignKey(
-        'Item.item_id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+    order_id = db.Column(db.Integer, nullable=False, index=True)
+    item_id = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            [item_id], 
+            ['Item.Item_ID'],
+            ondelete='CASCADE',
+            onupdate='CASCADE'
+        ),
+        db.ForeignKeyConstraint(
+            [order_id], 
+            ['Order.order_id'],
+            ondelete='CASCADE',
+            onupdate='CASCADE'
+        ),
+    {'quote': True})  # Add this to handle case-sensitive table names
 
     # order_id = db.Column(db.String(36), db.ForeignKey('order.order_id'), nullable=False)
     # order = db.relationship('Order', backref='order_item')
