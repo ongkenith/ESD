@@ -209,11 +209,9 @@ def update_order(order_id):
         # Try to get the order using raw SQL to bypass ORM foreign key constraints
         # First check if the order exists
         # changed this to fit postgresql format
-        query = text('SELECT * FROM "Order" WHERE "Order_ID" = :order_id')
-        result = db.session.execute(query, {"order_id": order_id})
-        order_data = result.fetchone()
+        order = db.session.scalar(db.select(Order).filter_by(order_id=order_id))
         
-        if not order_data:
+        if not order:
             return jsonify(
                 {
                     "code": 404,
@@ -223,54 +221,50 @@ def update_order(order_id):
                     "message": "Order not found."
                 }
             ), 404
+        
+        data = request.get_json()
+        if not data:
+            return jsonify(
+                {
+                    "code": 401,
+                    "message": "No data provided in request."
+                }
+            ), 401
 
         # update status using raw SQL
-        data = request.get_json()
-        if data.get('status'):
-            update_query = text("UPDATE `Order` SET Order_Status = :status WHERE Order_ID = :order_id")
-            db.session.execute(update_query, {"status": data['status'], "order_id": order_id})
+        
+        # Update fields if provided
+        if 'status' in data:
+            order.order_status = data['status']
+
+        try:
             db.session.commit()
-            
-            # Get the updated order for response
-            result = db.session.execute(query, {"order_id": order_id})
-            updated_order = result.fetchone()
-            
-            # Create a response JSON format
-            order_json = {
-                "order_id": updated_order.Order_ID,
-                "order_date": updated_order.Order_Date.strftime("%Y-%m-%d %H:%M:%S") if updated_order.Order_Date else None,
-                "drone_id": updated_order.droneID,
-                "total_amount": float(updated_order.Total_Amount) if updated_order.Total_Amount else None,
-                "payment_status": updated_order.Payment_Status,
-                "deliveryLocation": updated_order.DeliveryLocation,
-                "Customer_ID": updated_order.Customer_ID,
-                "order_status": updated_order.Order_Status
-            }
-            
             return jsonify(
                 {
                     "code": 200,
-                    "data": order_json
+                    "data": order.json()
                 }
             ), 200
-        return jsonify(
-            {
-                "code": 400,
-                "message": "No status provided in request."
-            }
-        ), 400
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(
+                {
+                    "code": 501,
+                    "message": f"Database error: {str(e)}"
+                }
+            ), 501
+
     except Exception as e:
         print("Error: {}".format(str(e)))
         return jsonify(
             {
-                "code": 500,
+                "code": 502,
                 "data": {
                     "order_id": order_id
                 },
                 "message": "An error occurred while updating the order. " + str(e)
             }
-        ), 500
-
+        ), 502
 
 @app.route("/order/<string:order_id>/add_item", methods=['POST'])
 def add_item_to_order(order_id):
