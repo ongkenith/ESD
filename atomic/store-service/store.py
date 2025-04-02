@@ -19,12 +19,13 @@ class Store(db.Model):
     __tablename__ = 'Store'
     store_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     pickup_location = db.Column(db.Integer, nullable=False)
+    store_image_url = db.Column(db.Text)
 
 @app.route('/store/<int:store_id>', methods=['GET'])
 def get_store(store_id):
     store = Store.query.get(store_id)
     if store:
-        return jsonify({"store_id": store.store_id, "pickup_location": store.pickup_location})
+        return jsonify({"store_id": store.store_id, "pickup_location": store.pickup_location, "store_image_url": store.store_image_url})
     return jsonify({"error": "Store not found"}), 404
 
 @app.route('/store', methods=['GET'])
@@ -32,7 +33,7 @@ def get_all_stores():
     stores = Store.query.all()
     if stores:
         return jsonify({"store": [
-            {"store_id": s.store_id, "pickup_location": s.pickup_location} 
+            {"store_id": s.store_id, "pickup_location": s.pickup_location, "store_image_url": s.store_image_url} 
             for s in stores
         ]})
     return jsonify({"error": "No stores found"}), 404

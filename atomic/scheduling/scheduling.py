@@ -51,6 +51,7 @@ class Store(db.Model):
     
     store_id = db.Column(db.Integer, primary_key=True)
     pickup_location = db.Column(db.Integer, nullable=False)
+    store_image_url = db.Column(db.Text)
 
 class Drone(db.Model):
     __tablename__ = 'Drone'
