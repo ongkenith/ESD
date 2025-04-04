@@ -176,7 +176,9 @@ def find_by_order_id(order_id):
 @app.route("/order", methods=['POST'])
 def create_order():
     Customer_ID = request.json.get('Customer_ID', None)
-    order = Order(Customer_ID=Customer_ID, order_status='PENDING FOR DRONE')
+    total_amount = request.json.get('total_amount', 0)
+    delivery_location = request.json.get('delivery_location', 000000)
+    order = Order(Customer_ID=Customer_ID, order_status='PENDING FOR DRONE', total_amount=total_amount, deliveryLocation=delivery_location, payment_status=False)
 
     cart_item = request.json.get('cart_item')
     for item in cart_item:

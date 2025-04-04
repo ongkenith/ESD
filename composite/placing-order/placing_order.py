@@ -25,11 +25,12 @@ def place_order():
     app.logger.info("Received place_order request")
     try:
         data = request.get_json()
-        if not data or 'customer_id' not in data or 'cart_item' not in data:
+        if not data or 'Customer_ID' not in data or 'cart_item' not in data or 'delivery_location' not in data:
             app.logger.error("Invalid JSON payload received")
-            return jsonify({"error": "Invalid JSON payload"}), 400
+            return jsonify({"error": "Invalid JSON payload", "data": data}), 400
         
-        customer_id = data['customer_id']
+        customer_id = data['Customer_ID']
+        delivery_location = data['delivery_location']
         cart_items = data['cart_item']
         app.logger.info(f"Processing order for customer_id: {customer_id}")
 
@@ -92,9 +93,10 @@ def place_order():
 
         # Step 3: Create the order (Send data to Order Service)
         order_payload = {
-            "customer_id": customer_id,
+            "Customer_ID": customer_id,
             "cart_item": cart_items, # Send original cart items as Order service might need quantity
-            "total_amount": total_amount # Send calculated total amount
+            "total_amount": total_amount, # Send calculated total amount
+            "delivery_location": delivery_location
         }
         app.logger.info(f"Calling Order Service: {ORDER_SERVICE_URL} with payload: {order_payload}")
         try:
@@ -122,31 +124,31 @@ def place_order():
              return jsonify({"error": "Invalid response from order service"}), 502
 
         # Step 4: Call Processing Order Service
-        processing_payload = { "order_id": order_id } # Send order_id to processing service
-        app.logger.info(f"Calling Processing Order Service: {PROCESSING_ORDER_URL} for order_id: {order_id}")
-        try:
-            headers = {'Content-Type': 'application/json'} # Define headers
-            processing_response = requests.post(PROCESSING_ORDER_URL, json=processing_payload, headers=headers) # Add headers
-            processing_response.raise_for_status() # Check for HTTP errors
-            processing_result = processing_response.json()
-            app.logger.info(f"Processing order service response: {processing_result}")
-            # Optional: Check processing_result for success indicator if needed
+        # processing_payload = { "order_id": order_id } # Send order_id to processing service
+        # app.logger.info(f"Calling Processing Order Service: {PROCESSING_ORDER_URL} for order_id: {order_id}")
+        # try:
+        #     headers = {'Content-Type': 'application/json'} # Define headers
+        #     processing_response = requests.post(PROCESSING_ORDER_URL, json=processing_payload, headers=headers) # Add headers
+        #     processing_response.raise_for_status() # Check for HTTP errors
+        #     processing_result = processing_response.json()
+        #     app.logger.info(f"Processing order service response: {processing_result}")
+        #     # Optional: Check processing_result for success indicator if needed
 
-        except requests.exceptions.RequestException as e:
-            # Log the specific error and response text if available
-            proc_response_text = e.response.text if e.response else "No response content"
-            app.logger.error(f"Processing order service request failed: {e}. Response: {proc_response_text}")
-            # Decide how critical this is. Maybe the order is created but processing failed.
-            # Return a partial success or a specific error?
-            # For now, let's return an error indicating processing failed.
-            proc_status_code = e.response.status_code if e.response else 503
-            return jsonify({
-                "error": f"Order created (ID: {order_id}) but failed to initiate processing: {proc_response_text}",
-                 "order_id": order_id # Still return order_id if created
-                 }), proc_status_code
-        except ValueError: # Includes JSONDecodeError
-             app.logger.error(f"Failed to decode processing order service response: {processing_response.text}")
-             return jsonify({"error": f"Order created (ID: {order_id}) but received invalid response from processing service", "order_id": order_id}), 502
+        # except requests.exceptions.RequestException as e:
+        #     # Log the specific error and response text if available
+        #     proc_response_text = e.response.text if e.response else "No response content"
+        #     app.logger.error(f"Processing order service request failed: {e}. Response: {proc_response_text}")
+        #     # Decide how critical this is. Maybe the order is created but processing failed.
+        #     # Return a partial success or a specific error?
+        #     # For now, let's return an error indicating processing failed.
+        #     proc_status_code = e.response.status_code if e.response else 503
+        #     return jsonify({
+        #         "error": f"Order created (ID: {order_id}) but failed to initiate processing: {proc_response_text}",
+        #          "order_id": order_id # Still return order_id if created
+        #          }), proc_status_code
+        # except ValueError: # Includes JSONDecodeError
+        #      app.logger.error(f"Failed to decode processing order service response: {processing_response.text}")
+        #      return jsonify({"error": f"Order created (ID: {order_id}) but received invalid response from processing service", "order_id": order_id}), 502
 
         # Step 5: Simulate Payment (Placeholder - commented out)
         # app.logger.info(f"Simulating payment for order {order_id} with amount {total_amount}")
@@ -178,7 +180,7 @@ def place_order():
             "order_id": order_id,
             "customer_details": customer_data, # Customer details fetched earlier
             "items_ordered": item_details_full, # Detailed items with price/quantity
-            "processing_status": processing_result, # Include response from processing service
+            "processing_status": "", # processing_result, # Include response from processing service
             "total_amount": total_amount
         }), 201 # Use 201 Created status
 
