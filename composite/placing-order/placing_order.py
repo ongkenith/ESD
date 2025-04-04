@@ -66,30 +66,63 @@ def place_order():
                 item_response.raise_for_status()
                 item_data = item_response.json()
                 app.logger.info(f"Item data received: {item_data}")
+
+                # Check response structure
+                if not isinstance(item_data, dict):
+                    app.logger.error(f"Invalid response type: {type(item_data)}")
+                    return jsonify({"error": f"Invalid response from item service"}), 502
+
+                # Check for error response
+                if 'error' in item_data:
+                    app.logger.error(f"Error from item service: {item_data['error']}")
+                    return jsonify({"error": f"Item service error: {item_data['error']}"}), 404
+
+                # Get item details from the 'data' field
+                if 'data' not in item_data:
+                    app.logger.error(f"Missing 'data' field in response: {item_data}")
+                    return jsonify({"error": f"Invalid response structure from item service"}), 502
+
+                item_details = item_data['data']
                 
-                # Assuming item_data has 'price'
-                price = item_data["data"]['Price']
-                if price is None:
-                     app.logger.error(f"Price not found for item {item_id}: {item_data}")
-                     return jsonify({"error": f"Price not found for item {item_id}"}), 500
-                
-                total_amount += price * quantity
-                item_details_full.append({
-                    "item_id": item_id,
-                    "name": item_data.get('name', 'N/A'), # Get name if available
-                    "price": price,
-                    "quantity": quantity
-                })
+                # Extract price and name from item_details
+                try:
+                    price = item_details.get('Price')
+                    if price is None:
+                        app.logger.error(f"Price not found in item details: {item_details}")
+                        return jsonify({"error": f"Price not found for item {item_id}"}), 404
+                    
+                    name = item_details.get('Name')
+                    if name is None:
+                        app.logger.error(f"Name not found in item details: {item_details}")
+                        return jsonify({"error": f"Name not found for item {item_id}"}), 404
+
+                    # Convert price to float with explicit error handling
+                    try:
+                        price = float(price)
+                    except (ValueError, TypeError):
+                        app.logger.error(f"Invalid price format: {price}")
+                        return jsonify({"error": f"Invalid price format for item {item_id}"}), 500
+
+                    total_amount += price * quantity
+                    item_details_full.append({
+                        "item_id": item_id,
+                        "name": name,
+                        "price": price,
+                        "quantity": quantity
+                    })
+                    app.logger.info(f"Successfully added item. Price: {price}, Total: {total_amount}")
+
+                except Exception as e:
+                    app.logger.error(f"Error processing item details: {str(e)}")
+                    app.logger.error(f"Item details content: {item_details}")
+                    return jsonify({"error": f"Error processing item details for item {item_id}: {str(e)}"}), 500
 
             except requests.exceptions.RequestException as e:
                 app.logger.error(f"Item service request failed for item {item_id}: {e}")
                 return jsonify({"error": f"Failed to retrieve details for item {item_id}: {e}"}), 503
             except ValueError:
-                 app.logger.error(f"Failed to decode item service response: {item_response.text}")
-                 return jsonify({"error": f"Invalid response from item service for item {item_id}"}), 502
-            except TypeError:
-                 app.logger.error(f"Error processing item price or quantity for item {item_id}: price={price}, quantity={quantity}")
-                 return jsonify({"error": f"Error calculating price for item {item_id}"}), 500
+                app.logger.error(f"Failed to decode item service response: {item_response.text}")
+                return jsonify({"error": f"Invalid response from item service for item {item_id}"}), 502
 
         # Step 3: Create the order (Send data to Order Service)
         order_payload = {
