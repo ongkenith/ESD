@@ -44,7 +44,7 @@
             opacity: 0.65;
             cursor: not-allowed;
         }
-        .en-route {
+        .delivering {
             background-color: #f7c326;
             color: #000;
         }
@@ -132,8 +132,8 @@
                                     <div class="order-info">
                                         <p class="mb-1">
                                             <strong>Status:</strong> 
-                                            <span class="badge ${isDelivered ? 'bg-success' : 'en-route'}">
-                                                ${isDelivered ? 'DELIVERED' : 'EN ROUTE'}
+                                            <span class="badge ${isDelivered ? 'bg-success' : 'delivering'}">
+                                                ${isDelivered ? 'DELIVERED' : 'DELIVERING'}
                                             </span>
                                         </p>
                                         <p class="mb-1"><strong>Postal Code:</strong> ${order.deliveryLocation}</p>
