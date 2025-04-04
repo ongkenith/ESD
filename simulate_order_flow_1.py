@@ -110,6 +110,7 @@ def simulate_order_flow():
             store_name = f"Store #{store_id}"
 
         # Step 4: Place an order through the placing-order service
+        # Also Check drone availability and weather conditions
         print_step(4, "Placing an order")
         
         # Create order payload

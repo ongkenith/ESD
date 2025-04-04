@@ -36,7 +36,7 @@ def get_all_items():
 def get_item(item_id):
     item = Item.query.get(item_id)
     if item:
-        return jsonify({"Item_ID": item.Item_ID, "Name": item.Name, "Store_ID": item.store_id, "Price": item.Price})
+        return jsonify({"code":200, "data":{"Item_ID": item.Item_ID, "Name": item.Name, "Store_ID": item.store_id, "Price": item.Price}}),200
     return jsonify({"error": "Item not found"}), 404
 
 @app.route('/items', methods=['POST'])

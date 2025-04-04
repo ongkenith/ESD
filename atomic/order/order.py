@@ -238,6 +238,8 @@ def update_order(order_id):
         # Update fields if provided
         if 'status' in data:
             order.order_status = data['status']
+        if 'drone_id' in data:
+            order.order_status = data['status']
 
         try:
             db.session.commit()

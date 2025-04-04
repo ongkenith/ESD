@@ -209,7 +209,8 @@ def process_order():
             
             # Step 4: Update order status
             update_data = {
-                "status": "SCHEDULED FOR DELIVERY"
+                "status": "SCHEDULED FOR DELIVERY",
+                "drone_id": drone_id
             }
             
             update_result = invoke_http(
