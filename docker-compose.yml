@@ -87,6 +87,25 @@ services:
       - rabbitmq
 
   # Composite services
+  placing-order:
+    build:
+      context: ./composite/placing-order
+    ports:
+      - "5500:5500" # Port for placing-order service
+    environment:
+      # Add environment variables needed by placing-order
+      CUSTOMER_URL: "http://customer:5001"
+      ITEM_URL: "http://item:5002"
+      ORDER_URL: "http://order:5004"
+      PROCESSING_ORDER_URL: "http://processing-order:5400"
+      # PAYMENT_URL: "http://payment:500X" # Assuming a payment service exists or will be added
+    depends_on:
+      - customer
+      - item
+      - order
+      - processing-order
+      # - payment # Add dependency if payment service is used
+
   condition-check:
     build:
       context: ./composite/condition-check

@@ -286,10 +286,10 @@ def add_item_to_order(order_id):
         if not item_data or 'item_id' not in item_data or 'quantity' not in item_data:
             return jsonify(
                 {
-                    "code": 400,
+                    "code": 401,
                     "message": "Invalid request. Please provide item_id and quantity."
                 }
-            ), 400
+            ), 401
 
         new_item = Order_Item(
             order_id=order_id,
@@ -297,7 +297,8 @@ def add_item_to_order(order_id):
             quantity=item_data['quantity']
         )
         
-        db.session.add(new_item)
+        order.order_item.append(new_item)
+
         db.session.commit()
         
         return jsonify(
