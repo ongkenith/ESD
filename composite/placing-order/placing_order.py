@@ -68,7 +68,7 @@ def place_order():
                 app.logger.info(f"Item data received: {item_data}")
                 
                 # Assuming item_data has 'price'
-                price = item_data.get('Price')
+                price = item_data["data"]['Price']
                 if price is None:
                      app.logger.error(f"Price not found for item {item_id}: {item_data}")
                      return jsonify({"error": f"Price not found for item {item_id}"}), 500

@@ -239,7 +239,7 @@ def update_order(order_id):
         if 'status' in data:
             order.order_status = data['status']
         if 'drone_id' in data:
-            order.order_status = data['status']
+            order.droneID = data['drone_id']
 
         try:
             db.session.commit()

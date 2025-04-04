@@ -112,7 +112,23 @@ class Scheduling(db.Model):
             'weatherCheck': self.WeatherCheck
         }
         return dto
-
+    
+@app.route("/schedule")
+def get_all_schedule():
+    schedule = db.session.scalar(db.select(Scheduling))
+    if schedule:
+        return jsonify(
+            {
+                "code": 200,
+                "data": schedule.json()
+            }
+        )
+    return jsonify(
+        {
+            "code": 404,
+            "message": "No schedule exists"
+        }
+    ), 404
 
 @app.route("/schedule/<string:drone_id>")
 def find_by_drone_id(drone_id):

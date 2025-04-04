@@ -110,7 +110,7 @@ def simulate_order_flow():
             store_name = f"Store #{store_id}"
 
         # Step 4: Place an order through the placing-order service
-        # Also Check drone availability and weather conditions
+        # This will also touch processing_order (due to how it works)
         print_step(4, "Placing an order")
         
         # Create order payload
@@ -151,82 +151,39 @@ def simulate_order_flow():
         print_service_call("Condition Check", f"{CONDITION_CHECK_URL}/check-condition", "POST")
         
         try:
-            weather_check_input = json({
+            condition_check_input = {
                 "pickUpLocation": pickup_location
-            })
-            weather_check_response = requests.post(f"{CONDITION_CHECK_URL}/check-condition")
-            weather_check_data = weather_check_response.json()
-            print_response(weather_check_data)
+            }
+            condition_check_response = requests.post(f"{CONDITION_CHECK_URL}/check-condition", json=condition_check_input)
+            condition_check_data = condition_check_response.json()
+            print_response(condition_check_data)
             print(f"{Colors.GREEN}✓ Weather conditions checked{Colors.ENDC}")
         except Exception as e:
             print(f"{Colors.YELLOW}⚠ Weather check simulation (might not be implemented): {str(e)}{Colors.ENDC}")
-            
-        print_service_call("Drone", f"{DRONE_URL}/drone", "GET")
-        try:
-            drone_check_response = requests.get(f"{DRONE_URL}/drone")
-            drone_check_data = drone_check_response.json()
-            print_response(drone_check_data)
-            print(f"{Colors.GREEN}✓ Drone availability checked{Colors.ENDC}")
-            available_drone_id = 1  # Default value
-            if isinstance(drone_check_data, list) and len(drone_check_data) > 0:
-                available_drone_id = drone_check_data[0].get("id", 1)
-        except Exception as e:
-            print(f"{Colors.YELLOW}⚠ Drone availability check simulation (might not be implemented): {str(e)}{Colors.ENDC}")
-            available_drone_id = 1  # Default value
             
         # Step 6: Get order details
         print_step(6, "Retrieving order details")
         print_service_call("Order", f"{ORDER_URL}/order/{order_id}")
         
+        drone_id = 0
+
         try:
             order_details_response = requests.get(f"{ORDER_URL}/order/{order_id}")
             order_details = order_details_response.json()
             print_response(order_details)
+            drone_id = order_details['data']['drone_id']
             
-            order_status = order_details.get("data", {}).get("order_status", "UNKNOWN")
+            order_status = order_details["data"]["order_status"]
             print(f"{Colors.GREEN}✓ Order status: {order_status}{Colors.ENDC}")
         except Exception as e:
             print(f"{Colors.RED}Error getting order details: {str(e)}{Colors.ENDC}")
-
-        # Step 7: Directly test drone navigation service
-        print_step(7, "Testing drone navigation service directly")
         
-        navigation_payload = {
-            "pickUpLocation": pickup_location,
-            "storeId": store_id,
-            "deliveryLocation": delivery_location,
-            "order_id": order_id,
-            "customer_id": customer_id
-        }
-        
-        print_service_call("Drone Navigation", f"{DRONE_NAVIGATION_URL}/navigate-drone", "POST")
-        print(f"Payload: {json.dumps(navigation_payload, indent=2)}")
+        # Step 7: Check scheduling service
+        print_step(7, "Checking scheduling service")
+        print_service_call("Scheduling", f"http://localhost:5005/schedule", "GET")
         
         try:
-            navigation_response = requests.post(
-                f"{DRONE_NAVIGATION_URL}/navigate-drone",
-                json=navigation_payload,
-                headers={"Content-Type": "application/json"}
-            )
-            navigation_result = navigation_response.json()
-            print_response(navigation_result)
-            
-            if isinstance(navigation_result, dict) and "drone" in navigation_result:
-                drone_id = navigation_result["drone"].get("id", available_drone_id)
-                print(f"{Colors.GREEN}✓ Drone navigation initiated with drone ID: {drone_id}{Colors.ENDC}")
-            else:
-                drone_id = available_drone_id
-                print(f"{Colors.YELLOW}⚠ Using default drone ID: {drone_id}{Colors.ENDC}")
-        except Exception as e:
-            print(f"{Colors.YELLOW}⚠ Direct drone navigation test simulation (might have issues): {str(e)}{Colors.ENDC}")
-            drone_id = available_drone_id
-        
-        # Step 7.5: Check scheduling service
-        print_step(7.5, "Checking scheduling service")
-        print_service_call("Scheduling", f"http://localhost:5005/scheduling", "GET")
-        
-        try:
-            scheduling_response = requests.get("http://localhost:5005/scheduling")
+            scheduling_response = requests.get("http://localhost:5005/schedule")
             scheduling_result = scheduling_response.json()
             print_response(scheduling_result)
             print(f"{Colors.GREEN}✓ Scheduling service checked{Colors.ENDC}")

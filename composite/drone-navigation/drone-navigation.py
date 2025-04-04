@@ -31,7 +31,7 @@ def navigate_drone():
                 }), condition_result["code"]
             
             # Get the drone ID from the condition check response
-            drone_id = condition_result["data"]["drone"]["Drone ID"]
+            drone_id = condition_result["data"]["drone"]['Drone ID']
             
             # Update drone status to "On Delivery"
             update_status = {
