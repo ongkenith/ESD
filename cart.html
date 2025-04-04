@@ -88,14 +88,6 @@
             <div id="checkout-form" class="checkout-form" style="display: none;">
                 <h3 class="pb-2">Delivery Information</h3>
                 <div class="form-group">
-                    <label for="user-name">Your Name</label>
-                    <input type="text" class="form-control" id="user-name" placeholder="Enter your name" required>
-                </div>
-                <div class="form-group">
-                    <label for="user-email">Your Email</label>
-                    <input type="email" class="form-control" id="user-email" placeholder="Enter email address" required>
-                </div>
-                <div class="form-group">
                     <label for="postal-code">Postal Code</label>
                     <input type="text" 
                            class="form-control" 
@@ -127,21 +119,17 @@
         const emptyCartMessage = document.getElementById('empty-cart-message');
         const checkoutButton = document.getElementById('checkout-btn');
         const checkoutForm = document.getElementById('checkout-form');
-        const userNameInput = document.getElementById('user-name');
-        const userEmailInput = document.getElementById('user-email');
         const postalCodeInput = document.getElementById('postal-code');
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         let totalPrice = 0;
 
         function updateCheckoutButtonState() {
             const hasItems = cart.length > 0;
-            const hasName = userNameInput.value.trim() !== '';
             const hasValidPostalCode = /^\d{6}$/.test(postalCodeInput.value);
             
-            checkoutButton.disabled = !(hasItems && hasName && hasValidPostalCode);
+            checkoutButton.disabled = !(hasItems && hasValidPostalCode);
         }
 
-        userNameInput.addEventListener('input', updateCheckoutButtonState);
         postalCodeInput.addEventListener('input', updateCheckoutButtonState);
 
         if (cart.length === 0) {
@@ -206,12 +194,12 @@
                 return;
             }
 
-            fetch('http://localhost:5004/order', {
+            fetch('http://localhost:5500/place_order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     Customer_ID: customer.Customer_ID,
-                    postalCode: postalCode,
+                    delivery_location: postalCode,
                     cart_item: cart.map(item => ({
                         item_id: item.id,
                         quantity: item.quantity
@@ -220,11 +208,13 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.code === 201) {
+                if (data.order_id) {
+                    // Store order details in session storage
+                    sessionStorage.setItem('lastOrder', JSON.stringify(data));
                     localStorage.removeItem('cart');
-                    window.location.href = 'orders.html';
+                    window.location.href = 'payment-successful.html';
                 } else {
-                    throw new Error(data.message);
+                    throw new Error(data.error || 'Failed to place order');
                 }
             })
             .catch(error => {
