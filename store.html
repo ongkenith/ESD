@@ -87,7 +87,7 @@
     <!-- JavaScript for Add to Cart Functionality -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('http://localhost:5003/store')
+            fetch('http://localhost:5002/items')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -96,30 +96,33 @@
                 })
                 .then(data => {
                     const container = document.getElementById('stores-container');
-                    if (data.store && data.store.length > 0) {
-                        data.store.forEach(store => {
-                            // Replace the card template in the JavaScript section with this:
-                            container.innerHTML += `
-                            <div class="col-md-4">
+                    if (data.items && data.items.length > 0) {
+                        data.items.forEach(item => {
+                            const card = document.createElement('div');
+                            card.className = 'col-md-4';
+                            card.innerHTML = `
                                 <div class="card shadow-sm">
-                                    <img src="${store.store_image_url}" 
-                                    alt="Store ${store.store_id}" class="card-img-top">
+                                    <img src="https://via.placeholder.com/150" 
+                                    alt="Item ${item.Item_ID}" class="card-img-top">
                                     <div class="card-body text-center">
-                                        <h5 class="card-title">Store #${store.store_id}</h5>
-                                        <p class="card-text">Location: ${store.pickup_location}</p>
+                                        <h5 class="card-title">${item.Name}</h5>
+                                        <p class="card-text">Store #${item.Store_ID}</p>
+                                        <p class="card-text">Price: $${item.Price.toFixed(2)}</p>
                                         <div class="quantity-selector">
                                             <button class="btn btn-sm btn-outline-secondary quantity-btn minus-btn">-</button>
                                             <input type="number" class="form-control quantity-input" value="1" min="1">
                                             <button class="btn btn-sm btn-outline-secondary quantity-btn plus-btn">+</button>
                                         </div>
-                                        <button class="btn btn-primary add-to-cart-btn" data-store-id="${store.store_id}" 
-                                            data-store-location="${store.pickup_location}">
+                                        <button class="btn btn-primary add-to-cart-btn" 
+                                            data-id="${item.Item_ID}"
+                                            data-name="${item.Name}"
+                                            data-store-id="${item.Store_ID}"
+                                            data-price="${item.Price}">
                                             Add to Cart
                                         </button>
                                     </div>
-                                </div>
-                            </div>
-                        `;
+                                </div>`;
+                            container.appendChild(card);
                         });
                     } else {
                         container.innerHTML = '<p class="text-center">No products found</p>';
@@ -132,44 +135,59 @@
                 });
         });
 
-        const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
-
-        // Replace the entire event listener code with this:
-        document.addEventListener('click', function(e) {
+        // Handle all dynamic events
+        document.addEventListener('click', function(event) {
             // Quantity selector functionality
-            if (e.target.classList.contains('minus-btn')) {
-                const input = e.target.nextElementSibling;
+            if (event.target.classList.contains('minus-btn')) {
+                const input = event.target.nextElementSibling;
                 if (input.value > 1) input.value--;
-            } else if (e.target.classList.contains('plus-btn')) {
-                const input = e.target.previousElementSibling;
+            } 
+            else if (event.target.classList.contains('plus-btn')) {
+                const input = event.target.previousElementSibling;
                 input.value++;
             }
-            
             // Add to cart functionality
-            if (e.target.classList.contains('add-to-cart-btn')) {
-                const card = e.target.closest('.card');
-                const storeId = e.target.getAttribute('data-store-id');
-                const storeLocation = e.target.getAttribute('data-store-location');
-                const quantity = parseInt(card.querySelector('.quantity-input').value);
+            else if (event.target.classList.contains('add-to-cart-btn')) {
+                const button = event.target;
+                const card = button.closest('.card');
+                const quantityInput = card.querySelector('.quantity-input');
                 
-                // Create cart item object
+                // Get all item details
+                const itemId = button.getAttribute('data-id');
+                const itemName = button.getAttribute('data-name');
+                const storeId = button.getAttribute('data-store-id');
+                const itemPrice = parseFloat(button.getAttribute('data-price'));
+                const quantity = parseInt(quantityInput.value);
+                const total = (itemPrice * quantity).toFixed(2);
+                
+                // Create cart item object that matches what cart.html expects
                 const cartItem = {
-                    id: storeId,
-                    name: `Store #${storeId}`,
-                    location: storeLocation,
+                    id: itemId,
+                    name: itemName,
+                    location: `Store #${storeId}`,
                     quantity: quantity,
-                    price: 10.00, // Assuming a fixed price per store visit
-                    total: (10.00 * quantity).toFixed(2)
+                    price: itemPrice,
+                    total: total
                 };
                 
                 // Add to cart
                 let cart = JSON.parse(localStorage.getItem('cart')) || [];
-                cart.push(cartItem);
+                // Check if item already exists in cart
+                const existingItemIndex = cart.findIndex(item => item.id === itemId);
+                if (existingItemIndex !== -1) {
+                    // Update existing item
+                    cart[existingItemIndex].quantity += quantity;
+                    cart[existingItemIndex].total = (cart[existingItemIndex].price * cart[existingItemIndex].quantity).toFixed(2);
+                } else {
+                    // Add new item
+                    cart.push(cartItem);
+                }
+                
                 localStorage.setItem('cart', JSON.stringify(cart));
                 
-                alert(`${quantity} item(s) from Store #${storeId} added to cart!`);
+                alert(`${quantity} ${itemName}(s) added to cart!`);
             }
-});
+        });
     </script>
 </body>
 </html>

@@ -82,10 +82,10 @@
     <section id="orders" class="py-5">
         <div class="container">
             <h2>Your Cart</h2>
-            <p id="empty-cart-message">Your cart is currently empty.</p>
+            <p id="empty-cart-message" class="my-4">Your cart is currently empty.</p>
             <ul id="orders-list" class="list-group mt-3"></ul>
 
-            <div id="checkout-form" class="checkout-form" style="display: none;">
+            <div id="checkout-form" class="checkout-form d-none">
                 <h3 class="pb-2">Delivery Information</h3>
                 <div class="form-group">
                     <label for="postal-code">Postal Code</label>
@@ -132,53 +132,61 @@
 
         postalCodeInput.addEventListener('input', updateCheckoutButtonState);
 
-        if (cart.length === 0) {
-            emptyCartMessage.style.display = 'block';
-            checkoutForm.style.display = 'none';
-            checkoutButton.disabled = true;
-        } else {
-            emptyCartMessage.style.display = 'none';
-            checkoutForm.style.display = 'block';
+        function updateCartDisplay() {
+            if (cart.length === 0) {
+                emptyCartMessage.classList.remove('d-none');
+                checkoutForm.classList.add('d-none');
+                checkoutButton.disabled = true;
+                ordersList.innerHTML = '';
+            } else {
+                emptyCartMessage.classList.add('d-none');
+                checkoutForm.classList.remove('d-none');
+                ordersList.innerHTML = '';
+                totalPrice = 0;
 
-            cart.forEach(item => {
-                const itemTotal = parseFloat(item.total);
-                totalPrice += itemTotal;
+                cart.forEach(item => {
+                    const itemTotal = parseFloat(item.total);
+                    totalPrice += itemTotal;
 
-                const cartItem = document.createElement('li');
-                cartItem.classList.add('list-group-item');
-                cartItem.innerHTML = `
-                    <div>
-                        <strong>${item.name}</strong><br>
-                        <small>Location: ${item.location}</small><br>
-                        Quantity: ${item.quantity} x $10.00
-                    </div>
-                    <div>
-                        $${item.total}
-                        <button class='btn btn-danger btn-sm remove-btn' data-id="${item.id}">Remove</button>
-                    </div>
-                `;
+                    const cartItem = document.createElement('li');
+                    cartItem.classList.add('list-group-item');
+                    cartItem.innerHTML = `
+                        <div>
+                            <strong>${item.name}</strong><br>
+                            <small>Location: ${item.location}</small><br>
+                            Quantity: ${item.quantity} x $${item.price.toFixed(2)}
+                        </div>
+                        <div>
+                            $${item.total}
+                            <button class='btn btn-danger btn-sm remove-btn' data-id="${item.id}">Remove</button>
+                        </div>
+                    `;
 
-                const removeButton = cartItem.querySelector('.remove-btn');
-                removeButton.addEventListener('click', function() {
-                    const itemIndex = cart.findIndex(i => i.id === item.id);
-                    if (itemIndex !== -1) {
-                        const updatedCart = [...cart.slice(0, itemIndex), ...cart.slice(itemIndex + 1)];
-                        localStorage.setItem('cart', JSON.stringify(updatedCart));
-                        location.reload();
-                    }
+                    const removeButton = cartItem.querySelector('.remove-btn');
+                    removeButton.addEventListener('click', function() {
+                        const itemIndex = cart.findIndex(i => i.id === item.id);
+                        if (itemIndex !== -1) {
+                            cart.splice(itemIndex, 1);
+                            localStorage.setItem('cart', JSON.stringify(cart));
+                            updateCartDisplay();
+                        }
+                    });
+
+                    ordersList.appendChild(cartItem);
                 });
 
-                ordersList.appendChild(cartItem);
-            });
-
-            const totalItem = document.createElement('li');
-            totalItem.classList.add('list-group-item', 'bg-light');
-            totalItem.innerHTML = `
-                <div><strong>Total</strong></div>
-                <div><strong>$${totalPrice.toFixed(2)}</strong></div>
-            `;
-            ordersList.appendChild(totalItem);
+                const totalItem = document.createElement('li');
+                totalItem.classList.add('list-group-item', 'bg-light');
+                totalItem.innerHTML = `
+                    <div><strong>Total</strong></div>
+                    <div><strong>$${totalPrice.toFixed(2)}</strong></div>
+                `;
+                ordersList.appendChild(totalItem);
+            }
         }
+
+        // Initialize the cart display
+        updateCartDisplay();
 
         checkoutButton.addEventListener('click', function() {
             const postalCode = postalCodeInput.value;
@@ -209,7 +217,6 @@
             .then(response => response.json())
             .then(data => {
                 if (data.order_id) {
-                    // Store order details in session storage
                     sessionStorage.setItem('lastOrder', JSON.stringify(data));
                     localStorage.removeItem('cart');
                     window.location.href = 'payment-successful.html';
