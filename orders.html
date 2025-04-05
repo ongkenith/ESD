@@ -81,7 +81,10 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link mx-3" href="store.html">Store</a></li>
                     <li class="nav-item"><a class="nav-link mx-3" href="cart.html">My Cart</a></li>
-                    <li class="nav-item"><a class="btn btn-outline-dark mx-3" href="orders.html">My Orders</a></li>
+                    <li class="nav-item"><a class="nav-link mx-2" href="orders.html">My Orders</a></li>
+                    <li class="nav-item">
+                        <button id="logout-btn" class="btn btn-outline-danger mx-3">Logout</button>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -112,17 +115,45 @@
     <!-- JavaScript for Displaying Orders -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const customer = JSON.parse(sessionStorage.getItem('customer'));
+            
+            // Check if customer exists and has required fields
+            if (!customer || !customer.Email || !customer.Customer_ID) {
+                window.location.href = 'login.html?reason=session_expired';
+                return;
+            }
+    
+            // Fetch all orders from the order microservice
             fetch('http://localhost:5004/order')
                 .then(response => {
-                    if (!response.ok) throw new Error('Network error');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch orders');
+                    }
                     return response.json();
                 })
                 .then(data => {
                     const ordersContainer = document.getElementById('orders-container');
+                    ordersContainer.innerHTML = ''; // Clear existing content
                     
-                    if (data.code === 200 && data.data.orders.length > 0) {
-                        data.data.orders.forEach(order => {
+                    if (data.code === 200 && data.data && data.data.orders.length > 0) {
+                        // Filter orders to only show those matching the customer's ID
+                        const customerOrders = data.data.orders.filter(
+                            order => order.Customer_ID == customer.Customer_ID
+                        );
+                        
+                        if (customerOrders.length === 0) {
+                            ordersContainer.innerHTML = `
+                                <li class="order-card text-center py-4">
+                                    <p class="text-muted">You haven't placed any orders yet.</p>
+                                </li>
+                            `;
+                            return;
+                        }
+                        
+                        customerOrders.forEach(order => {
                             const isDelivered = order.order_status === 'DELIVERED';
+                            const orderDate = order.order_date ? new Date(order.order_date) : new Date();
+                            
                             const orderItem = document.createElement('li');
                             orderItem.classList.add('order-card');
                             
@@ -133,12 +164,12 @@
                                         <p class="mb-1">
                                             <strong>Status:</strong> 
                                             <span class="badge ${isDelivered ? 'bg-success' : 'delivering'}">
-                                                ${isDelivered ? 'DELIVERED' : 'DELIVERING'}
+                                                ${order.order_status || 'PENDING'}
                                             </span>
                                         </p>
-                                        <p class="mb-1"><strong>Postal Code:</strong> ${order.deliveryLocation}</p>
-                                        <p class="mb-1"><strong>Amount:</strong> $${order.total_amount || '0.00'}</p>
-                                        <p class="mb-1"><strong>Date:</strong> ${new Date(order.order_date).toLocaleString()}</p>
+                                        <p class="mb-1"><strong>Postal Code:</strong> ${order.deliveryLocation || 'N/A'}</p>
+                                        <p class="mb-1"><strong>Amount:</strong> $${parseFloat(order.total_amount || '0').toFixed(2)}</p>
+                                        <p class="mb-1"><strong>Date:</strong> ${orderDate.toLocaleString()}</p>
                                     </div>
                                 </div>
                                 <button class="btn btn-success received-btn" 
@@ -149,17 +180,10 @@
                             `;
                             ordersContainer.appendChild(orderItem);
                         });
-
-                        document.querySelectorAll('.received-btn').forEach(btn => {
-                            btn.addEventListener('click', function() {
-                                const orderId = this.getAttribute('data-order-id');
-                                markOrderReceived(orderId, this);
-                            });
-                        });
                     } else {
                         ordersContainer.innerHTML = `
                             <li class="order-card text-center py-4">
-                                <p class="text-muted">No orders found in the system.</p>
+                                <p class="text-muted">You haven't placed any orders yet.</p>
                             </li>
                         `;
                     }
@@ -168,33 +192,21 @@
                     console.error('Error:', error);
                     document.getElementById('orders-container').innerHTML = `
                         <li class="order-card text-center py-4 text-danger">
-                            Error loading orders. Please refresh the page.
+                            <p>Error loading orders</p>
+                            <small>${error.message}</small>
+                            <div class="mt-2">
+                                <a href="login.html" class="btn btn-outline-secondary">Re-login</a>
+                                <button onclick="window.location.reload()" class="btn btn-outline-primary ms-2">Retry</button>
+                            </div>
                         </li>
                     `;
                 });
-
-            function markOrderReceived(orderId, button) {
-                fetch(`http://localhost:5004/order/${orderId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'RECEIVED' })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code === 200) {
-                        button.disabled = true;
-                        button.classList.remove('btn-success');
-                        button.classList.add('btn-secondary');
-                        button.textContent = 'Order Received';
-                    } else {
-                        throw new Error(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to update order status.');
-                });
-            }
+        });
+        // // Add logout functionality
+        document.getElementById('logout-btn').addEventListener('click', function() {
+        sessionStorage.removeItem('isLoggedIn');
+        sessionStorage.removeItem('customer');
+        window.location.href = 'index.html';
         });
     </script>
 </body>

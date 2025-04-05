@@ -55,7 +55,9 @@ def login():
             "success": True,
             "customer": {
                 "Customer_ID": customer.Customer_ID,
-                "Name": customer.Name
+                "Name": customer.Name,
+                "Email": customer.Email,
+                "Mobile_No": customer.Mobile_No
             }
         }), 200
     else:

@@ -94,14 +94,25 @@
                     body: JSON.stringify({ email, mobile_no: mobileNo })
                 });
 
+                const data = await response.json();
+                console.log("Test 1")
+                console.log(data)
+
                 if (!response.ok) {
-                    const errorData = await response.json(); // Parse error response
+                    // const errorData = await response.json(); // Parse error response
                     throw new Error(errorData.error || 'Login failed');
                 }
 
-                const data = await response.json();
-                sessionStorage.setItem('customer', JSON.stringify(data.customer));
+                console.log("Test 2")
+                console.log(data)
+                // sessionStorage.setItem('customer', JSON.stringify(data.customer));
                 sessionStorage.setItem('isLoggedIn', 'true');  // Add this line
+                // After successful login:
+                sessionStorage.setItem('customer', JSON.stringify({
+                    Email: data.customer.Email,
+                    Name: data.customer.Name,  // Optional for display
+                    Customer_ID: data.customer.Customer_ID  // Add this line to store customer ID
+                }));
                 window.location.href = 'index.html';
 
             } catch (error) {

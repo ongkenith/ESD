@@ -72,15 +72,18 @@
                 navItemsContainer.innerHTML = `
                     <li class="nav-item"><a class="nav-link mx-3" href="store.html">Store</a></li>
                     <li class="nav-item"><a class="nav-link mx-3" href="cart.html">My Cart</a></li>
-                    <li class="nav-item"><a class="btn btn-outline-dark mx-3" href="orders.html">My Orders</a></li>
+                    <li class="nav-item"><a class="nav-link mx-2" href="orders.html">My Orders</a></li>
+                    <li class="nav-item">
+                        <button id="logout-btn" class="btn btn-outline-danger mx-3">Logout</button>
+                    </li>
                 `;
                 
                 // // Add logout functionality
-                // document.getElementById('logout-btn').addEventListener('click', function() {
-                //     sessionStorage.removeItem('isLoggedIn');
-                //     sessionStorage.removeItem('customer');
-                //     window.location.href = 'index.html';
-                // });
+                document.getElementById('logout-btn').addEventListener('click', function() {
+                    sessionStorage.removeItem('isLoggedIn');
+                    sessionStorage.removeItem('customer');
+                    window.location.href = 'index.html';
+                });
             } else {
                 // User is not logged in - show only Login
                 navItemsContainer.innerHTML = `
