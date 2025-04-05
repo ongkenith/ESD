@@ -61,33 +61,36 @@ class Drone(db.Model):
 
 # Main Scheduling model
 class Scheduling(db.Model):
-    __tablename__ = 'scheduling'  # Changed to lowercase to match the SQL schema
+    __tablename__ = 'scheduling'
 
-    Schedule_ID = db.Column(db.Integer, primary_key=True)  # Changed to match SQL case
-    ScheduleName = db.Column(db.String(255), nullable=False)  # Changed to match SQL case
-    ScheduleDateTime = db.Column(db.DateTime, nullable=False, default=datetime.now)  # Changed to match SQL case
-    WeatherCheck = db.Column(db.Boolean, nullable=False)  # Changed to match SQL case
+    Schedule_ID = db.Column(db.Integer, primary_key=True)
+    ScheduleDateTime = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    WeatherCheck = db.Column(db.Boolean, nullable=False)
 
-    # Define columns with matching case to SQL schema
-    PickUpLocation = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
-    deliveryLocation = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
-    droneID = db.Column(db.Integer, nullable=False)  # Changed to match SQL case
+    # Foreign key columns (for database relationships)
+    store_id = db.Column(db.Integer, nullable=False)  # References store.store_id
+    order_id = db.Column(db.Integer, nullable=False)  # References order.order_id
+    droneID = db.Column(db.Integer, nullable=False)  # References drone.droneID
     
-    # Define foreign keys as relationships instead of constraints
-    pickup_location = db.relationship('Store', foreign_keys=[PickUpLocation])
-    delivery_location = db.relationship('Order', foreign_keys=[deliveryLocation])
+    # Actual location columns (for operational use)
+    actual_pickup_location = db.Column(db.Integer, nullable=False)
+    actual_delivery_location = db.Column(db.Integer, nullable=False)
+    
+    # Define foreign keys as relationships
+    store = db.relationship('Store', foreign_keys=[store_id])
+    order = db.relationship('Order', foreign_keys=[order_id])
     drone = db.relationship('Drone', foreign_keys=[droneID])
     
     # Specify all foreign key constraints with proper table and column names
     __table_args__ = (
         db.ForeignKeyConstraint(
-            ['PickUpLocation'], 
+            ['store_id'], 
             ['Store.store_id'],
             ondelete='CASCADE',
             onupdate='CASCADE'
         ),
         db.ForeignKeyConstraint(
-            ['deliveryLocation'], 
+            ['order_id'], 
             ['Order.Order_ID'],
             ondelete='CASCADE',
             onupdate='CASCADE'
@@ -98,17 +101,24 @@ class Scheduling(db.Model):
             ondelete='CASCADE',
             onupdate='CASCADE'
         ),
-        {'quote': True}  # This tells SQLAlchemy to quote the table name and identifiers
+        {'quote': True}
     )
 
     def json(self):
         dto = {
             'schedule_id': self.Schedule_ID,
-            'schedule_name': self.ScheduleName,
             'schedule_date': self.ScheduleDateTime,
             'drone_id': self.droneID,
-            'deliveryLocation': self.deliveryLocation,
-            'pickUpLocation': self.PickUpLocation,
+            'locations': {
+                'pickup': {
+                    'store_id': self.store_id,
+                    'actual_location': self.actual_pickup_location
+                },
+                'delivery': {
+                    'order_id': self.order_id,
+                    'actual_location': self.actual_delivery_location
+                }
+            },
             'weatherCheck': self.WeatherCheck
         }
         return dto
@@ -152,38 +162,46 @@ def find_by_drone_id(drone_id):
 
 @app.route("/schedule", methods=['POST'])
 def create_schedule():
-    drone_id = request.json.get('drone_id')
-    deliveryLocation = request.json.get('deliveryLocation')
-    pickUpLocation = request.json.get('pickUpLocation')
-    weatherCheck = request.json.get('weatherCheck')
-    
-    # Updated to use the correct field names that match the database schema
-    schedule = Scheduling(
-        droneID=drone_id, 
-        ScheduleName='STH STH STH', 
-        deliveryLocation=deliveryLocation, 
-        PickUpLocation=pickUpLocation, 
-        WeatherCheck=weatherCheck
-    )
-
     try:
+        data = request.json
+        drone_id = data.get('drone_id')
+        store_id = data.get('store_id')  # For foreign key
+        order_id = data.get('order_id')  # For foreign key
+        actual_delivery_location = data.get('deliveryLocation')  # Actual postal code
+        actual_pickup_location = data.get('pickUpLocation')  # Actual postal code
+        weather_check = data.get('weatherCheck')
+        
+        if not all([drone_id, store_id, order_id, actual_delivery_location, actual_pickup_location]):
+            return jsonify({
+                "code": 400,
+                "message": "Missing required fields"
+            }), 400
+
+        # Create schedule with both reference IDs and actual locations
+        schedule = Scheduling(
+            droneID=drone_id,
+            store_id=store_id,  # Foreign key to store
+            order_id=order_id,  # Foreign key to order
+            actual_pickup_location=actual_pickup_location,  # Actual pickup location
+            actual_delivery_location=actual_delivery_location,  # Actual delivery location
+            WeatherCheck=weather_check
+        )
+
         db.session.add(schedule)
         db.session.commit()
+
+        return jsonify({
+            "code": 201,
+            "data": schedule.json(),
+            "message": "Schedule created successfully"
+        }), 201
+
     except Exception as e:
         print("Error: {}".format(str(e)))
-        return jsonify(
-            {
-                "code": 500,
-                "message": "An error occurred while creating the order. " + str(e)
-            }
-        ), 500
-
-    return jsonify(
-        {
-            "code": 201,
-            "data": schedule.json()
-        }
-    ), 201
+        return jsonify({
+            "code": 500,
+            "message": "An error occurred while creating the schedule. " + str(e)
+        }), 500
 
 
 if __name__ == '__main__':

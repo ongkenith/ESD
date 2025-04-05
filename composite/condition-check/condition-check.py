@@ -140,9 +140,14 @@ def check_condition():
             data = request.get_json()
             print("\nReceived a request to check conditions:", data)
             
-            # 1 & 2. Check weather condition for the given location
-            location = data.get("pickUpLocation")
-            weather_result = check_weather(location)
+            # Get both actual locations and reference IDs
+            pickup_location = data.get("pickUpLocation")  # Actual location for weather check
+            store_id = data.get("storeId")  # For foreign key
+            delivery_location = data.get("deliveryLocation")  # Actual delivery location
+            order_id = data.get("order_id")  # For foreign key
+            
+            # Check weather using actual pickup location
+            weather_result = check_weather(pickup_location)
             print("Weather result:", weather_result)
             
             if weather_result["code"] not in range(200, 300):
@@ -159,7 +164,7 @@ def check_condition():
                     "message": "Weather conditions not suitable for drone flight."
                 }), 400
             
-            # 4. Check for available drones
+            # Check for available drones
             drone_result = invoke_http(drone_URL + "s", method='GET')
             print("Drone result:", drone_result)
             
@@ -178,13 +183,11 @@ def check_condition():
             
             # For testing purposes, if no drone is available, force one to be available
             if not available_drone and len(drone_result["data"]["drones"]) > 0:
-                # Select the first drone and make it available
                 selected_drone_id = drone_result["data"]["drones"][0]["Drone ID"]
                 update_status = {
                     "status": "Available"
                 }
                 
-                # Update drone status
                 status_result = invoke_http(
                     f"{drone_URL}/{selected_drone_id}", method='PUT', json=update_status
                 )
@@ -199,11 +202,13 @@ def check_condition():
                     "message": "No available drones found."
                 }), 404
             
-            # 6. Update the schedule with the available drone
+            # Create schedule with both actual locations and reference IDs
             schedule_data = {
                 "drone_id": available_drone["Drone ID"],
-                "deliveryLocation": data.get("order_id", 1),  # Use order_id instead of the actual location
-                "pickUpLocation": data.get("storeId", location),  # Use storeId if provided, fallback to location
+                "store_id": store_id,  # Store ID for foreign key
+                "order_id": order_id,  # Order ID for foreign key
+                "pickUpLocation": pickup_location,  # Actual pickup location
+                "deliveryLocation": delivery_location,  # Actual delivery location
                 "weatherCheck": True  # Weather is safe as we've checked above
             }
             
@@ -218,13 +223,23 @@ def check_condition():
                     "message": "Failed to create schedule: " + str(schedule_result["message"])
                 }), schedule_result["code"]
             
-            # 7. Return the scheduling details and weather condition
+            # Return the scheduling details and weather condition
             return jsonify({
                 "code": 200,
                 "data": {
                     "schedule": schedule_result["data"],
                     "weather": weather_result["data"],
-                    "drone": available_drone
+                    "drone": available_drone,
+                    "locations": {
+                        "pickup": {
+                            "actual_location": pickup_location,
+                            "store_id": store_id
+                        },
+                        "delivery": {
+                            "actual_location": delivery_location,
+                            "order_id": order_id
+                        }
+                    }
                 },
                 "message": "Condition check successful, schedule created."
             })

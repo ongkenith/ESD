@@ -181,15 +181,15 @@ def process_order():
                     "message": f"Failed to retrieve store information: {store_result.get('error', 'Unknown error')}"
                 }), 404
                 
-            pickup_location = store_result["pickup_location"]
+            store_pickup_location = store_result["pickup_location"]  # Actual location value
             store_name = store_result.get("name", f"Store #{store_id}")
             
             # Step 3: Pass information to drone navigation service
             navigation_data = {
-                "pickUpLocation": pickup_location,
-                "storeId": store_id,
-                "deliveryLocation": delivery_location,
-                "order_id": order_id
+                "pickUpLocation": store_pickup_location,  # Actual pickup location for operations
+                "storeId": store_id,  # Store ID for database reference
+                "deliveryLocation": delivery_location,  # Actual delivery location (postal code)
+                "order_id": order_id  # Order ID for database reference
             }
             
             print("Initiating drone navigation...")
@@ -262,7 +262,7 @@ Thank you for choosing our Drone Delivery Service!
                     "order_details": order_result["data"],
                     "store_details": {
                         "store_id": store_id,
-                        "pickup_location": pickup_location
+                        "pickup_location": store_pickup_location
                     },
                     "navigation_details": navigation_result["data"],
                     "notification_sent": notification_sent,
