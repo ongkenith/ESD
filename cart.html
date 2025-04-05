@@ -215,18 +215,40 @@
                 })
             })
             .then(response => response.json())
-            .then(data => {
-                if (data.order_id) {
-                    sessionStorage.setItem('lastOrder', JSON.stringify(data));
-                    localStorage.removeItem('cart');
-                    window.location.href = 'payment-successful.html';
-                } else {
-                    throw new Error(data.error || 'Failed to place order');
+            .then(orderData => {
+                if (!orderData.order_id) {
+                    throw new Error(orderData.error || 'Failed to place order');
                 }
+        
+                // Store order details for later use
+                sessionStorage.setItem("lastOrder", JSON.stringify(orderData));
+        
+                const totalAmount = cart.reduce((sum, item) => sum + parseFloat(item.total), 0);
+        
+                // Call PayPal API to create payment
+                return fetch('https://personal-zcvdggd4.outsystemscloud.com/paymentAPI/rest/CreatePaymentAPI/CreatePayment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        Amount: totalAmount.toFixed(2),
+                        Currency: "USD",
+                        Description: `Payment for Order #${orderData.order_id}`
+                    })
+                });
+            })
+            .then(response => response.json())
+            .then(paymentResponse => {
+                if (!paymentResponse || !paymentResponse.URL) {
+                    throw new Error('Failed to get PayPal approval URL');
+                }
+
+                window.location.href = paymentResponse.URL;
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to place order: ' + error.message);
+                alert('Something went wrong: ' + error.message);
             });
         });
     </script>
