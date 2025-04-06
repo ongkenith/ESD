@@ -77,7 +77,12 @@ services:
       EMAIL_ENABLED: "true"
       EMAIL_HOST: "smtp.mailersend.net"
       EMAIL_PORT: "587"
+      EMAIL_USER: "${EMAIL_USER}"
+      EMAIL_PASSWORD: "${EMAIL_PASSWORD}"
+      EMAIL_FROM: "${EMAIL_FROM}"
       EMAIL_FROM_NAME: "Drone Delivery Service"
+      MAILERSEND_API_KEY: "${MAILERSEND_API_KEY}"
+      USE_MAILERSEND_API: "true"
     depends_on:
       - rabbitmq
 
