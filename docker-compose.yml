@@ -77,12 +77,7 @@ services:
       EMAIL_ENABLED: "true"
       EMAIL_HOST: "smtp.mailersend.net"
       EMAIL_PORT: "587"
-      EMAIL_USER: "MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net"
-      EMAIL_PASSWORD: "mssp.c15zPmM.3zxk54vnek6ljy6v.175bFNr"
-      EMAIL_FROM: "MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net"
       EMAIL_FROM_NAME: "Drone Delivery Service"
-      MAILERSEND_API_KEY: "mlsn.6bdfb137652a12742bf620598b7374f59e91fb2f64b88e42636680365ffb92fc"
-      USE_MAILERSEND_API: "true"
     depends_on:
       - rabbitmq
 
