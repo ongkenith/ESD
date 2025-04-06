@@ -72,57 +72,44 @@
 
 <script>
     const params = new URLSearchParams(window.location.search);
-    const orderId = params.get('order_id');
-    const amount = params.get('amount');
-    const item = params.get('item');
-    const qty = params.get('qty');
-    const price = params.get('price');
+    const orderId = parseInt(params.get("order_id"));
+    const data = JSON.parse(localStorage.getItem("paymentData") || "{}");
 
+    const listGroup = document.getElementById("order-details");
 
-    const listGroup = document.getElementById('order-details');
+    if (data.Order_ID === orderId && data.Item_List?.items?.length) {
+        const items = data.Item_List.items;
+        const amount = data.Amount;
 
-    if (orderId) {
-        const orderIdItem = document.createElement('li');
-        orderIdItem.classList.add('list-group-item');
-        orderIdItem.innerHTML = `<strong>Order ID:</strong> ${orderId}`;
-        listGroup.appendChild(orderIdItem);
-        const cart = JSON.parse(sessionStorage.getItem('cart')) || JSON.parse(localStorage.getItem('cart')) || [];
+        listGroup.innerHTML += `
+            <li class="list-group-item"><strong>Order ID:</strong> ${orderId}</li>
+        `;
 
-        if (cart.length > 0) {
-            cart.forEach((item, index) => {
-                const itemBlock = document.createElement('li');
-                itemBlock.classList.add('list-group-item');
-                itemBlock.innerHTML = `
-                    <strong>Item ${index + 1}:</strong> ${item.name}<br>
-                    <strong>Quantity:</strong> ${item.quantity}<br>
-                    <strong>Price per item:</strong> $${parseFloat(item.price).toFixed(2)}<br>
-                    <strong>Subtotal:</strong> $${parseFloat(item.total).toFixed(2)}
-                `;
-                listGroup.appendChild(itemBlock);
-            });
-        } else {
-            const noItems = document.createElement('li');
-            noItems.classList.add('list-group-item');
-            noItems.innerHTML = 'No items found in the cart.';
-            listGroup.appendChild(noItems);
-        }
+        items.forEach((item, index) => {
+            const subtotal = (parseFloat(item.price) * parseInt(item.quantity)).toFixed(2);
+            const itemBlock = document.createElement("li");
+            itemBlock.classList.add("list-group-item");
+            itemBlock.innerHTML = `
+                <strong>Item ${index + 1}:</strong> ${item.name}<br>
+                <strong>Quantity:</strong> ${item.quantity}<br>
+                <strong>Price per item:</strong> $${parseFloat(item.price).toFixed(2)}<br>
+                <strong>Subtotal:</strong> $${subtotal}
+            `;
+            listGroup.appendChild(itemBlock);
+        });
 
-        if (amount) {
-            const amountItem = document.createElement('li');
-            amountItem.classList.add('list-group-item', 'bg-light');
-            amountItem.innerHTML = `<strong>Total Amount:</strong> $${parseFloat(amount).toFixed(2)}`;
-            listGroup.appendChild(amountItem);
-        }
+        listGroup.innerHTML += `
+            <li class="list-group-item bg-light"><strong>Total Amount:</strong> $${parseFloat(amount).toFixed(2)}</li>
+        `;
 
-        localStorage.removeItem('cart');
-        sessionStorage.removeItem('lastOrder');
-        
+        // ✅ Clean up after showing
+        localStorage.removeItem("paymentData");
     } else {
-        const errorItem = document.createElement('li');
-        errorItem.classList.add('list-group-item', 'text-danger');
-        errorItem.textContent = 'No order details found.';
-        listGroup.appendChild(errorItem);
+        listGroup.innerHTML = `
+            <li class="list-group-item text-danger">No valid order details found.</li>
+        `;
     }
+
 
 </script>
 </body>
