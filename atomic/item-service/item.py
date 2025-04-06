@@ -20,14 +20,16 @@ class Item(db.Model):
     Item_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     Name = db.Column(db.String(255), nullable=False)
     store_id = db.Column(db.String(255), nullable=False)
+    store_name = db.Column(db.Text) 
     Price = db.Column(db.Float, nullable=False)
+    item_image_url = db.Column(db.Text)
     
 @app.route('/items', methods=['GET'])
 def get_all_items():
     items = Item.query.all()
     if items:
         return jsonify({"items": [
-            {"Item_ID": i.Item_ID, "Name": i.Name, "Store_ID": i.store_id, "Price": i.Price} 
+            {"Item_ID": i.Item_ID, "Name": i.Name, "Store_ID": i.store_id, "store_name":i.store_name, "Price": i.Price, "item_image_url": i.item_image_url } 
             for i in items
         ]})
     return jsonify({"error": "No items found"}), 404
@@ -36,7 +38,7 @@ def get_all_items():
 def get_item(item_id):
     item = Item.query.get(item_id)
     if item:
-        return jsonify({"code":200, "data":{"Item_ID": item.Item_ID, "Name": item.Name, "Store_ID": item.store_id, "Price": item.Price}}),200
+        return jsonify({"code":200, "data":{"Item_ID": item.Item_ID, "Name": item.Name, "Store_ID": item.store_id,"store_name":item.store_name, "Price": item.Price, "item_image_url":item.item_image_url}}),200
     return jsonify({"error": "Item not found"}), 404
 
 @app.route('/items', methods=['POST'])

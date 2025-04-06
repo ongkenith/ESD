@@ -57,6 +57,9 @@
         <div class="order-summary">
             <h4>Your Order Details</h4>
             <ul id="order-details" class="list-group mt-3"></ul>
+            <div class="mt-4">
+                <a href="orders.html" class="btn btn-primary btn-lg">View My Orders</a>
+            </div>
         </div>
     </div>
 </section>
@@ -71,6 +74,10 @@
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get('order_id');
     const amount = params.get('amount');
+    const item = params.get('item');
+    const qty = params.get('qty');
+    const price = params.get('price');
+
 
     const listGroup = document.getElementById('order-details');
 
@@ -79,6 +86,26 @@
         orderIdItem.classList.add('list-group-item');
         orderIdItem.innerHTML = `<strong>Order ID:</strong> ${orderId}`;
         listGroup.appendChild(orderIdItem);
+        const cart = JSON.parse(sessionStorage.getItem('cart')) || JSON.parse(localStorage.getItem('cart')) || [];
+
+        if (cart.length > 0) {
+            cart.forEach((item, index) => {
+                const itemBlock = document.createElement('li');
+                itemBlock.classList.add('list-group-item');
+                itemBlock.innerHTML = `
+                    <strong>Item ${index + 1}:</strong> ${item.name}<br>
+                    <strong>Quantity:</strong> ${item.quantity}<br>
+                    <strong>Price per item:</strong> $${parseFloat(item.price).toFixed(2)}<br>
+                    <strong>Subtotal:</strong> $${parseFloat(item.total).toFixed(2)}
+                `;
+                listGroup.appendChild(itemBlock);
+            });
+        } else {
+            const noItems = document.createElement('li');
+            noItems.classList.add('list-group-item');
+            noItems.innerHTML = 'No items found in the cart.';
+            listGroup.appendChild(noItems);
+        }
 
         if (amount) {
             const amountItem = document.createElement('li');
@@ -87,8 +114,9 @@
             listGroup.appendChild(amountItem);
         }
 
-        // Clear cart (optional)
         localStorage.removeItem('cart');
+        sessionStorage.removeItem('lastOrder');
+        
     } else {
         const errorItem = document.createElement('li');
         errorItem.classList.add('list-group-item', 'text-danger');

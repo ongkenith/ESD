@@ -64,7 +64,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link mx-3" href="store.html">Store</a></li>
+                    <li class="nav-item"><a class="nav-link mx-3" href="store.html">Products</a></li>
                     <li class="nav-item"><a class="nav-link mx-3" href="cart.html">My Cart</a></li>
                     <li class="nav-item"><a class="nav-link mx-2" href="orders.html">My Orders</a></li>
                     <li class="nav-item">
@@ -235,19 +235,29 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
+                        Order_ID: orderData.order_id,
                         Amount: totalAmount.toFixed(2),
                         Currency: "USD",
-                        Description: `Payment for Order #${orderData.order_id}`
+                        Description: `Payment for Order #${orderData.order_id}`,
+                        Item_list: {
+                            Items: cart.map(item => ({
+                                Name: item.name,
+                                Price: item.price,
+                                Quantity: item.quantity,
+                                Currency: "USD" 
+                            }))
+                        }
                     })
                 });
             })
             .then(response => response.json())
             .then(paymentResponse => {
-                if (!paymentResponse || !paymentResponse.URL) {
+                if (!paymentResponse || !paymentResponse.ApprovalURL) {
                     throw new Error('Failed to get PayPal approval URL');
                 }
-
-                window.location.href = paymentResponse.URL;
+                
+                sessionStorage.setItem("cart", JSON.stringify(cart));
+                window.location.href = paymentResponse.ApprovalURL;
             })
             .catch(error => {
                 console.error('Error:', error);

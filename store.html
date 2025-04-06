@@ -53,7 +53,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link mx-3" href="store.html">Store</a></li>
+                    <li class="nav-item"><a class="nav-link mx-3" href="store.html">Products</a></li>
                     <li class="nav-item"><a class="nav-link mx-3" href="cart.html">My Cart</a></li>
                     <li class="nav-item"><a class="nav-link mx-2" href="orders.html">My Orders</a></li>
                     <li class="nav-item">
@@ -66,7 +66,7 @@
 
     <!-- Header -->
     <header class="store-header">
-        <h1>Store</h1>
+        <h1>Products</h1>
         <p>Browse and order from our wide selection of products.</p>
     </header>
 
@@ -105,11 +105,11 @@
                             card.className = 'col-md-4';
                             card.innerHTML = `
                                 <div class="card shadow-sm">
-                                    <img src="https://via.placeholder.com/150" 
+                                    <img src="${item.item_image_url}"
                                     alt="Item ${item.Item_ID}" class="card-img-top">
                                     <div class="card-body text-center">
                                         <h5 class="card-title">${item.Name}</h5>
-                                        <p class="card-text">Store #${item.Store_ID}</p>
+                                        <p class="card-text">${item.store_name}</p>
                                         <p class="card-text">Price: $${item.Price.toFixed(2)}</p>
                                         <div class="quantity-selector">
                                             <button class="btn btn-sm btn-outline-secondary quantity-btn minus-btn">-</button>
