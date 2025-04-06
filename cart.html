@@ -256,8 +256,8 @@
                     throw new Error('Failed to get PayPal approval URL');
                 }
                 
-                localStorage.setItem("paymentData", JSON.stringify(paymentResponse));
-                window.location.href = `${paymentResponse.ApprovalURL}?order_id=${paymentResponse.Order_ID}`;
+                sessionStorage.setItem("cart", JSON.stringify(cart));
+                window.location.href = paymentResponse.ApprovalURL;
             })
             .catch(error => {
                 console.error('Error:', error);
