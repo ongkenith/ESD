@@ -4,9 +4,13 @@ import os, sys
 from invokes import invoke_http
 import requests
 import json
+from os import environ
 
 app = Flask(__name__)
 CORS(app)
+
+# Use environment variables for service URLs, provide defaults for local testing
+WEATHER_API_KEY = environ.get('WEATHER_API_KEY')
 
 # Determine environment and set base URLs
 DOCKER_MODE = os.environ.get('DOCKER_MODE', 'true').lower() == 'true'
@@ -26,7 +30,6 @@ drone_URL = f"http://{DRONE_HOST}/drone"
 scheduling_URL = f"http://{SCHEDULING_HOST}/schedule"
 
 # OpenWeather API configuration
-WEATHER_API_KEY = "c74cacd58d151f5cb253802574dacabd"
 WEATHER_API_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 # Function to check weather using OpenWeather API

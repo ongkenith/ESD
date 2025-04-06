@@ -77,9 +77,9 @@ services:
       EMAIL_ENABLED: "true"
       EMAIL_HOST: "smtp.mailersend.net"
       EMAIL_PORT: "587"
-      EMAIL_USER: "${EMAIL_USER}"
+      EMAIL_USER: "MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net"
       EMAIL_PASSWORD: "${EMAIL_PASSWORD}"
-      EMAIL_FROM: "${EMAIL_FROM}"
+      EMAIL_FROM: "MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net"
       EMAIL_FROM_NAME: "Drone Delivery Service"
       MAILERSEND_API_KEY: "${MAILERSEND_API_KEY}"
       USE_MAILERSEND_API: "true"
@@ -111,6 +111,8 @@ services:
       context: ./composite/condition-check
     ports:
       - "5100:5100"
+    environment:
+      WEATHER_API_KEY: "${WEATHER_API_KEY}"
     depends_on:
       - drone
       - scheduling
