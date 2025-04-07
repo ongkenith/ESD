@@ -208,67 +208,52 @@
                 return;
             }
 
-            // Step 1: Create new order in Supabase
-            const orderRes = await fetch(`${supabaseUrl}/rest/v1/Order`, {
-                method: 'POST',
-                headers: {
-                    apikey: supabaseKey,
-                    Authorization: `Bearer ${supabaseKey}`,
-                    'Content-Type': 'application/json',
-                    Prefer: 'return=representation'
-                },
+            //using place order composite to create order
+            const placeOrderRes = await fetch("http://localhost:5500/place_order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    order_date: new Date().toISOString(),
-                    droneID: 1, // placeholder or dynamically assign if needed
-                    total_amount: totalPrice,
-                    payment_status: false,
-                    deliveryLocation: parseInt(postalCode),
-                    Customer_ID: customer.Customer_ID,
-                    order_status: "Pending"
+                Customer_ID: customer.Customer_ID,
+                cart_item: cart.map(item => ({
+                    item_id: item.id,
+                    quantity: item.quantity
+                })),
+                delivery_location: parseInt(postalCode)
                 })
             });
-
-            const [orderData] = await orderRes.json();
-            const orderId = orderData.order_id;
-            // insert each item into the db
-            await Promise.all(cart.map(item => {
-                return fetch(`${supabaseUrl}/rest/v1/Order_Item`, {
-                    method: 'POST',
-                    headers: {
-                        apikey: supabaseKey,
-                        Authorization: `Bearer ${supabaseKey}`,
-                        'Content-Type': 'application/json',
-                        Prefer: 'return=minimal'
-                    },
-                    body: JSON.stringify({
-                        order_id: orderId,
-                        item_id: item.id,
-                        quantity: item.quantity
-                    })
-                });
-            }));
+            
+            if (!placeOrderRes.ok) {
+                alert("❌ Failed to place order. Please try again.");
+                return;
+            }
+            
+            const orderResult = await placeOrderRes.json();
+            const orderId = orderResult.order_id;
+            const totalAmount = orderResult.total_amount;
+            const items = orderResult.items_ordered;
+        
             // call paypal api
             const paypalRes = await fetch('https://personal-zcvdggd4.outsystemscloud.com/paymentAPI/rest/CreatePaymentAPI/CreatePayment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     Order_ID: orderId,
-                    Amount: totalPrice.toFixed(2),
+                    Amount: totalAmount.toFixed(2),
                     Currency: "USD",
                     Description: `Payment for Order #${orderId}`,
                     Item_list: {
-                        Items: cart.map(item => ({
-                            Name: item.name,
-                            Price: item.price,
-                            Quantity: item.quantity,
-                            Currency: "USD"
+                        Items: items.map(item => ({
+                        Name: item.name,
+                        Price: item.price,
+                        Quantity: item.quantity,
+                        Currency: "USD"
                         }))
                     }
-                })
-            });
+                    })
+                });
+                
             const paypalData = await paypalRes.json();
-
-            if (!paypalData || !paypalData.ApprovalURL) {
+            if (!paypalData?.ApprovalURL) {
                 throw new Error('Failed to get PayPal approval URL');
             }
             //clear the cart ONLY after payment 
