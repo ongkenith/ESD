@@ -20,7 +20,7 @@ RABBITMQ_PORT = int(os.environ.get('RABBITMQ_PORT', 5672))
 RABBITMQ_QUEUE = os.environ.get('RABBITMQ_QUEUE', 'notification_queue')
 
 # Email settings
-EMAIL_ENABLED = os.environ.get('EMAIL_ENABLED', 'false').lower() == 'true'
+EMAIL_ENABLED = os.environ.get('EMAIL_ENABLED', 'true').lower() == 'true'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.mailersend.net')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USER = os.environ.get('EMAIL_USER', 'MS_FSeNj8@trial-r6ke4n1xr63gon12.mlsender.net')
@@ -30,7 +30,7 @@ EMAIL_FROM_NAME = os.environ.get('EMAIL_FROM_NAME', 'Drone Delivery Service')
 
 # MailerSend API key (if using API instead of SMTP)
 MAILERSEND_API_KEY = os.environ.get('MAILERSEND_API_KEY', 'mlsn.6bdfb137652a12742bf620598b7374f59e91fb2f64b88e42636680365ffb92fc')
-USE_MAILERSEND_API = os.environ.get('USE_MAILERSEND_API', 'true').lower() == 'true'
+USE_MAILERSEND_API = os.environ.get('USE_MAILERSEND_API', 'false').lower() == 'true'
 
 # Function to simulate sending SMS
 def send_sms(phone_number, message):
@@ -111,6 +111,8 @@ def send_email_api(to_email, subject, message, to_name="Customer"):
             return True
             
         print(f"Sending email via MailerSend API to {to_email}")
+        print(f"Using API key: {MAILERSEND_API_KEY}")
+        print(f"From email: {EMAIL_FROM}")
         
         # MailerSend API endpoint
         url = "https://api.mailersend.com/v1/email"
@@ -167,13 +169,16 @@ def send_email_api(to_email, subject, message, to_name="Customer"):
             "html": html_content
         }
         
-        # Convert payload to JSON
-        json_payload = json.dumps(payload)
+        print(f"Request payload: {json.dumps(payload, indent=2)}")
         
         # Send the request
-        response = requests.post(url, headers=headers, data=json_payload)
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
         
         # Check response
+        print(f"Response status code: {response.status_code}")
+        print(f"Response headers: {dict(response.headers)}")
+        print(f"Response body: {response.text}")
+        
         if response.status_code == 202:
             print(f"Email successfully sent to {to_email} via API")
             return True
@@ -184,6 +189,8 @@ def send_email_api(to_email, subject, message, to_name="Customer"):
             
     except Exception as e:
         print(f"Failed to send email via API: {str(e)}")
+        print(f"Exception type: {type(e)}")
+        print(f"Exception details: {str(e)}")
         return False
 
 # Function to send an email (delegating to SMTP or API method)
@@ -195,19 +202,29 @@ def send_email(to_email, subject, message, to_name="Customer"):
 
 # Function to get customer contact info
 def get_customer_contact(customer_id):
-    # This would typically come from a database lookup
-    # For now, we'll simulate it with hardcoded data
-    # All customers will use the same email for testing purposes
-    customer_data = {
-        1: {"name": "Tina", "phone": "91234567", "email": "shaunwang16@gmail.com"},
-        2: {"name": "Kenny", "phone": "92345678", "email": "shaunwang16@gmail.com"},
-        3: {"name": "Jordan", "phone": "93456789", "email": "shaunwang16@gmail.com"},
-        4: {"name": "Jasdev", "phone": "94567890", "email": "shaunwang16@gmail.com"},
-        5: {"name": "Zhengjie", "phone": "95678901", "email": "shaunwang16@gmail.com"},
-        6: {"name": "Deshaun", "phone": "96789012", "email": "shaunwang16@gmail.com"}
-    }
-    # For any customer ID not in the dictionary, return a default with the test email
-    return customer_data.get(customer_id, {"name": "Customer", "phone": "00000000", "email": "shaunwang16@gmail.com"})
+    # Get customer details from customer service
+    CUSTOMER_SERVICE_URL = os.environ.get('CUSTOMER_URL', 'http://customer:5001')
+    customer_url = f"{CUSTOMER_SERVICE_URL}/customer/{customer_id}"
+    
+    try:
+        # Call customer service API
+        response = requests.get(customer_url)
+        response.raise_for_status()  # Raise exception for bad status codes
+        customer_data = response.json()
+        
+        # Map the response to our expected format
+        return {
+            "name": customer_data.get("Name", "Customer"),
+            "phone": customer_data.get("Mobile_No", "00000000"),
+            "email": customer_data.get("Email", "unknown@email.com")
+        }
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to get customer details from service: {str(e)}")
+        # Return a default response in case of failure
+        return {"name": "Customer", "phone": "00000000", "email": "unknown@email.com"}
+    except Exception as e:
+        print(f"Unexpected error getting customer details: {str(e)}")
+        return {"name": "Customer", "phone": "00000000", "email": "unknown@email.com"}
 
 # Function to process messages from RabbitMQ
 def callback(ch, method, properties, body):

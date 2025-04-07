@@ -83,8 +83,10 @@ services:
       EMAIL_FROM_NAME: "Drone Delivery Service"
       MAILERSEND_API_KEY: "${MAILERSEND_API_KEY}"
       USE_MAILERSEND_API: "true"
+      CUSTOMER_URL: "http://customer:5001"
     depends_on:
       - rabbitmq
+      - customer
 
   # Composite services
   placing-order:
