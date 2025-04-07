@@ -270,63 +270,62 @@ def update_order(order_id):
             }
         ), 502
 
-@app.route("/order/<string:order_id>/add_item", methods=['POST'])
-def add_item_to_order(order_id):
-    try:
-        order = db.session.scalar(db.select(Order).filter_by(order_id=order_id))
-        if not order:
-            return jsonify(
-                {
-                    "code": 404,
-                    "data": {
-                        "order_id": order_id
-                    },
-                    "message": "Order not found."
-                }
-            ), 404
+# @app.route("/order/<string:order_id>/add_item", methods=['POST'])
+# def add_item_to_order(order_id):
+#     try:
+#         order = db.session.scalar(db.select(Order).filter_by(order_id=order_id))
+#         if not order:
+#             return jsonify(
+#                 {
+#                     "code": 404,
+#                     "data": {
+#                         "order_id": order_id
+#                     },
+#                     "message": "Order not found."
+#                 }
+#             ), 404
 
-        # Add the item to the order
-        item_data = request.json
-        if not item_data or 'item_id' not in item_data or 'quantity' not in item_data:
-            return jsonify(
-                {
-                    "code": 401,
-                    "message": "Invalid request. Please provide item_id and quantity."
-                }
-            ), 401
+#         # Add the item to the order
+#         item_data = request.json
+#         if not item_data or 'item_id' not in item_data or 'quantity' not in item_data:
+#             return jsonify(
+#                 {
+#                     "code": 401,
+#                     "message": "Invalid request. Please provide item_id and quantity."
+#                 }
+#             ), 401
 
-        new_item = Order_Item(
-            order_id=order_id,
-            item_id=item_data['item_id'],
-            quantity=item_data['quantity']
-        )
+#         new_item = Order_Item(
+#             order_id=order_id,
+#             item_id=item_data['item_id'],
+#             quantity=item_data['quantity']
+#         )
         
-        order.order_item.append(new_item)
+#         order.order_item.append(new_item)
 
-        db.session.commit()
+#         db.session.commit()
         
-        return jsonify(
-            {
-                "code": 201,
-                "data": {
-                    "order_id": order_id,
-                    "item_added": new_item.json()
-                },
-                "message": "Item added to order successfully."
-            }
-        ), 201
-    except Exception as e:
-        print("Error: {}".format(str(e)))
-        return jsonify(
-            {
-                "code": 500,
-                "data": {
-                    "order_id": order_id
-                },
-                "message": "An error occurred while adding item to the order. " + str(e)
-            }
-        ), 500
-
+    #     return jsonify(
+    #         {
+    #             "code": 201,
+    #             "data": {
+    #                 "order_id": order_id,
+    #                 "item_added": new_item.json()
+    #             },
+    #             "message": "Item added to order successfully."
+    #         }
+    #     ), 201
+    # except Exception as e:
+    #     print("Error: {}".format(str(e)))
+    #     return jsonify(
+    #         {
+    #             "code": 500,
+    #             "data": {
+    #                 "order_id": order_id
+    #             },
+    #             "message": "An error occurred while adding item to the order. " + str(e)
+    #         }
+    #     ), 500
 
 if __name__ == '__main__':
     print("This is flask for " + os.path.basename(__file__) + ": manage orders ...")
