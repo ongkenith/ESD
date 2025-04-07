@@ -63,30 +63,30 @@ def login():
     else:
         return jsonify({"success": False, "error": "Invalid credentials"}), 401
 
-# @app.route('/customer', methods=['POST'])
-# def create_customer():
-#     name = request.json.get('name', "Rando Person")
-#     email = request.json.get('email', None)
-#     if email == None:
-#         return jsonify({"error": "Enter an email"}), 401
-#     mobile_number = request.json.get('mobile_number', 90000000)
-#     customer = Customer(Name=name, Email=email, Mobile_No=mobile_number)
-#     try:
-#         db.session.add(customer)
-#         db.session.commit()
-#     except Exception as e:
-#         print("Error: {}".format(str(e)))
-#         return jsonify(
-#             {
-#                 "code": 500,
-#                 "error": "An error occurred while creating the order. " + str(e)
-#             }
-#         ), 500
-#     return jsonify(
-#         {
-#             "message": "Registration completed!"
-#         }
-#     ), 201
+@app.route('/registration', methods=['POST'])
+def create_customer():
+    name = request.json.get('name', "Rando Person")
+    email = request.json.get('email', None)
+    if email == None:
+        return jsonify({"error": "Enter an email"}), 401
+    mobile_number = request.json.get('mobile_number', 90000000)
+    customer = Customer(Name=name, Email=email, Mobile_No=mobile_number)
+    try:
+        db.session.add(customer)
+        db.session.commit()
+    except Exception as e:
+        print("Error: {}".format(str(e)))
+        return jsonify(
+            {
+                "code": 500,
+                "error": "An error occurred while creating the order. " + str(e)
+            }
+        ), 500
+    return jsonify(
+        {
+            "message": "Registration completed!"
+        }
+    ), 201
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
