@@ -136,9 +136,9 @@
                     ordersContainer.innerHTML = ''; // Clear existing content
                     
                     if (data.code === 200 && data.data && data.data.orders.length > 0) {
-                        // Filter orders to only show those matching the customer's ID
+                        // Filter orders to only show those matching the customer's ID ++ payment_status must be TRUE
                         const customerOrders = data.data.orders.filter(
-                            order => order.Customer_ID == customer.Customer_ID
+                            order => order.Customer_ID == customer.Customer_ID && order.payment_status === true
                         );
                         
                         if (customerOrders.length === 0) {
