@@ -50,16 +50,9 @@
 
 <!-- Success Message -->
 <section class="success-section">
-    <div class="container">
-        <h1>✅ Payment Completed</h1>
-        <p>Thank you for your purchase!</p>
 
         <div class="order-summary">
-            <h4>Your Order Details</h4>
             <ul id="order-details" class="list-group mt-3"></ul>
-            <div class="mt-4">
-                <a href="orders.html" class="btn btn-primary btn-lg">View My Orders</a>
-            </div>
         </div>
     </div>
 </section>
@@ -69,60 +62,46 @@
 </footer> -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-    const params = new URLSearchParams(window.location.search);
-    const orderId = params.get('order_id');
-    const amount = params.get('amount');
-    const item = params.get('item');
-    const qty = params.get('qty');
-    const price = params.get('price');
+    const orderId = new URLSearchParams(window.location.search).get("order_id");
 
+    const supabaseUrl = "https://fnkjhzstrrrkcrsibpuy.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZua2poenN0cnJya2Nyc2licHV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMzM5NDIsImV4cCI6MjA1ODcwOTk0Mn0.AkRp3KiSycUENcC58xbA5Xu2eL6BilcAMqP_t_B4cRk"; // Replace with your actual anon/public API key
 
-    const listGroup = document.getElementById('order-details');
-
-    if (orderId) {
-        const orderIdItem = document.createElement('li');
-        orderIdItem.classList.add('list-group-item');
-        orderIdItem.innerHTML = `<strong>Order ID:</strong> ${orderId}`;
-        listGroup.appendChild(orderIdItem);
-        const cart = JSON.parse(sessionStorage.getItem('cart')) || JSON.parse(localStorage.getItem('cart')) || [];
-
-        if (cart.length > 0) {
-            cart.forEach((item, index) => {
-                const itemBlock = document.createElement('li');
-                itemBlock.classList.add('list-group-item');
-                itemBlock.innerHTML = `
-                    <strong>Item ${index + 1}:</strong> ${item.name}<br>
-                    <strong>Quantity:</strong> ${item.quantity}<br>
-                    <strong>Price per item:</strong> $${parseFloat(item.price).toFixed(2)}<br>
-                    <strong>Subtotal:</strong> $${parseFloat(item.total).toFixed(2)}
-                `;
-                listGroup.appendChild(itemBlock);
-            });
-        } else {
-            const noItems = document.createElement('li');
-            noItems.classList.add('list-group-item');
-            noItems.innerHTML = 'No items found in the cart.';
-            listGroup.appendChild(noItems);
-        }
-
-        if (amount) {
-            const amountItem = document.createElement('li');
-            amountItem.classList.add('list-group-item', 'bg-light');
-            amountItem.innerHTML = `<strong>Total Amount:</strong> $${parseFloat(amount).toFixed(2)}`;
-            listGroup.appendChild(amountItem);
-        }
-
-        localStorage.removeItem('cart');
-        sessionStorage.removeItem('lastOrder');
-    } else {
-        const errorItem = document.createElement('li');
-        errorItem.classList.add('list-group-item', 'text-danger');
-        errorItem.textContent = 'No order details found.';
-        listGroup.appendChild(errorItem);
-    }
-
+    // mark order as PAID (payment status = true) --> so that cn get order details
+    fetch(`${supabaseUrl}/rest/v1/Order?order_id=eq.${orderId}`, {
+    method: 'PATCH',
+    headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation'
+    },
+    body: JSON.stringify({ payment_status: true })
+    })
+    .then(res => res.json())
+    .then(data => {
+    const container = document.getElementById('order-details');
+    container.innerHTML = `
+        <li class="list-group-item text-success">
+            <h1>✅ Payment Completed</h1>
+            <p>Thank you for your purchase!</p>
+        </li>
+        <li class="list-group-item">
+        <a href="order-details.html?order_id=${orderId}" class="btn btn-primary mt-3">
+            View Order Details
+        </a>
+        </li>
+    `;
+    })
+    .catch(err => {
+    console.error("Failed to update payment status:", err);
+    document.getElementById('order-details').innerHTML = `
+        <li class="list-group-item text-danger">
+        ⚠️ Something went wrong confirming your payment.
+        </li>
+    `;
+    });
 </script>
 </body>
 </html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Your Order Details</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<style>
+    body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #f8f8f8;
+    }
+    .order-section {
+    padding: 4rem 0;
+    text-align: center;
+    }
+    .order-section h1 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    }
+    .footer {
+    background-color: white;
+    text-align: center;
+    padding: 1rem 0;
+    color: #555;
+    font-size: 0.9rem;
+    }
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm">
+<div class="container">
+    <a class="navbar-brand" href="index.html">Nimbus</a>
+</div>
+</nav>
+
+<!-- Order Summary Section -->
+<section class="order-section">
+<div class="container">
+    <h1>📦 Your Order Summary</h1>
+    <ul id="order-list" class="list-group"></ul>
+    <p class="mt-4 fw-bold" id="total-amount"></p>
+    <a href="orders.html" class="btn btn-secondary mt-3">View My Orders</a>
+</div>
+</section>
+
+<script>
+const orderId = new URLSearchParams(window.location.search).get("order_id");
+const supabaseUrl = "https://fnkjhzstrrrkcrsibpuy.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZua2poenN0cnJya2Nyc2licHV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMzM5NDIsImV4cCI6MjA1ODcwOTk0Mn0.AkRp3KiSycUENcC58xbA5Xu2eL6BilcAMqP_t_B4cRk";
+
+async function loadOrderDetails() {
+    try {
+    // get ALL items in the order (under order id)
+    const orderItemsRes = await fetch(`${supabaseUrl}/rest/v1/Order_Item?order_id=eq.${orderId}&select=item_id,quantity`, {
+        headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`
+        }
+    });
+    const orderItems = await orderItemsRes.json();
+
+    // then for each item, get the item deets
+    const itemIds = orderItems.map(item => item.item_id).join(",");
+    const itemsRes = await fetch(`${supabaseUrl}/rest/v1/Item?Item_ID=in.(${itemIds})`, {
+        headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`
+        }
+    });
+    const itemDetails = await itemsRes.json();
+
+    const list = document.getElementById("order-list");
+    let totalAmount = 0;
+    orderItems.forEach((orderItem, idx) => {
+        const item = itemDetails.find(i => i.Item_ID === orderItem.item_id);
+        const subtotal = item.Price * orderItem.quantity;
+        totalAmount += subtotal;
+
+        const listItem = document.createElement("li");
+        listItem.className = "list-group-item";
+        listItem.innerHTML = `
+        <strong>Item ${idx + 1}:</strong> ${item.Name}<br/>
+        Quantity: ${orderItem.quantity}<br/>
+        Price per item: $${item.Price.toFixed(2)}<br/>
+        Subtotal: $${subtotal.toFixed(2)}
+        `;
+        list.appendChild(listItem);
+    });
+
+    document.getElementById("total-amount").textContent = `Total Amount: $${totalAmount.toFixed(2)}`;
+
+    } catch (error) {
+    console.error("Failed to load order:", error);
+    document.getElementById("order-list").innerHTML = `
+        <li class="list-group-item text-danger">Failed to load order. Please try again.</li>
+    `;
+    }
+}
+
+loadOrderDetails();
+</script>
+</body>
+</html>
