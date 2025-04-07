@@ -9,13 +9,12 @@
 2. Ensure that you are at the correct directory --> ESD
 3. Open command prompt (on VSCode)
 4. Type in "docker-compose up -d" to start running the service based on your respective docker-compose file
-5. Go to a web browser and type in "https://ongkenith.github.io/ESD/". You should be redirected to the login page. Enter the following below:
-    - Username: 
-    - Password:
+5. Go to a web browser and type in "https://ongkenith.github.io/ESD/". You should be redirected to the login page.
+6. (If you have not created an account)...
 
 **USE CASE 1 STEPS - Add items into order**
 1. Go to "Products" and "add to cart" items you want to purchase
-2. Proceed to "My Cart" and fill in a postal code before "Proceed to Checkout"
+2. Proceed to "My Cart" and fill in a postal code before "Proceed to Checkout". It will take a while before the website starts loading
 3. You will be redirected to Paypal page to pay for your purchases. Log in with these details
     - Paypal account: sb-iiaqd38594568@personal.example.com
     - Password: O?5)QWKc

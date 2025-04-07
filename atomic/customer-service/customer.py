@@ -69,7 +69,7 @@ def create_customer():
     email = request.json.get('email', None)
     if email == None:
         return jsonify({"error": "Enter an email"}), 401
-    mobile_number = request.json.get('mobile_number', "Rando Person")
+    mobile_number = request.json.get('mobile_number', 90000000)
     customer = Customer(Name=name, Email=email, Mobile_No=mobile_number)
     try:
         db.session.add(customer)
