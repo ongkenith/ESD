@@ -396,10 +396,24 @@ def complete_order():
         try:
             data = request.get_json()
             order_id = data.get("order_id")
-            drone_id = data.get("drone_id")
 
-            if not order_id or not drone_id:
-                return jsonify({"code": 400, "message": "Missing order_id or drone_id"}), 400
+            if not order_id:
+                return jsonify({"code": 400, "message": "Missing order_id"}), 400
+            
+            print("Getting order details...")
+            order_result = invoke_http(f"{order_URL}/{order_id}", method='GET')
+            print("Order result:", order_result)
+            
+            if order_result["code"] != 200:
+                return jsonify({
+                    "code": order_result["code"],
+                    "message": f"Failed to retrieve order information: {order_result.get('message', 'Unknown error')}"
+                }), order_result["code"]
+            
+            drone_id = order_result["data"]["drone_id"]
+
+            if not drone_id:
+                return jsonify({"code": 400, "message": "Missing drone_id"}), 400
 
             # 1. Update order to COMPLETED
             order_update_result = invoke_http(
