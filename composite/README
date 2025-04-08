@@ -1,0 +1,6 @@
+Not yet ready for testing, Created a normal file.
+
+To do:
+    1. add in payment end points
+    2. test connection with atomic services
+    3. test placing order with payment api and end points

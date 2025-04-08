@@ -1,0 +1,73 @@
+_format_version: "1.1"
+_transform: true
+
+services:
+# Atomic Services
+  - name: drone
+    url: http://drone:5006
+    routes:
+      - name: drone-route
+        paths:
+          - /api/v1/drone
+  - name: customer
+    url: http://customer:5001
+    routes:
+      - name: customer-route
+        paths:
+          - /api/v1/customer
+  - name: item
+    url: http://item:5002
+    routes:
+      - name: item-route
+        paths:
+          - /api/v1/item
+  - name: store
+    url: http://store:5003
+    routes:
+      - name: store-route
+        paths:
+          - /api/v1/store
+  - name: order
+    url: http://order:5004
+    routes:
+      - name: order-route
+        paths:
+          - /api/v1/order
+  - name: scheduling
+    url: http://scheduling:5005
+    routes:
+      - name: scheduling-route
+        paths:
+          - /api/v1/scheduling
+  - name: notification
+    url: http://notification:5300
+    routes:
+      - name: notification-route
+        paths:
+          - /api/v1/notification
+# Composite Services
+  - name: place_order
+    url: http://placing-order:5500
+    routes:
+      - name: place_order-route
+        paths:
+          - /api/v1/place_order
+  - name: processing-order
+    url: http://processing-order:5400
+    routes:
+      - name: processing_order-route
+        paths:
+          - /api/v1/processing_order
+  - name: condition-check
+    url: http://condition-check:5100
+    routes:
+      - name: condition_check-route
+        paths:
+          - /api/v1/condition_check
+  - name: drone-navigation
+    url: http://drone-navigation:5200
+    routes:
+      - name: drone_navigation-route
+        paths:
+          - /api/v1/drone_navigation
+  
