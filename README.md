@@ -17,7 +17,7 @@
 3. You will be redirected to Paypal page to pay for your purchases. Log in with these details
     - Paypal account: sb-iiaqd38594568@personal.example.com
     - Password: O?5)QWKc
-4. Once you have completed payment with Paypal, you will be redirected back to the website
+4. Once you have completed payment with Paypal, you will be redirected back to the website, where you may have to login again
 
 **USE CASE 2 STEPS - Processing order**
 1. Behind the scenes, the service will check when conditions are ideal to do the delivery
