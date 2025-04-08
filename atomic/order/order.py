@@ -327,6 +327,55 @@ def update_order(order_id):
     #         }
     #     ), 500
 
+@app.route("/order/<int:order_id>/complete", methods=['PUT'])
+def complete_order(order_id):
+    try:
+        # Get the order
+        order = db.session.scalar(db.select(Order).filter_by(order_id=order_id))
+        if not order:
+            return jsonify(
+                {
+                    "code": 404,
+                    "data": {
+                        "order_id": order_id
+                    },
+                    "message": "Order not found."
+                }
+            ), 404
+
+        # Update order status to completed
+        order.order_status = "COMPLETED"
+        
+        # Update drone status to available
+        drone = db.session.scalar(db.select(Drone).filter_by(droneID=order.droneID))
+        if drone:
+            drone.drone_status = "AVAILABLE"
+        
+        db.session.commit()
+        
+        return jsonify(
+            {
+                "code": 200,
+                "data": {
+                    "order": order.json(),
+                    "drone": drone.json() if drone else None
+                },
+                "message": "Order completed successfully and drone is now available."
+            }
+        ), 200
+        
+    except Exception as e:
+        print("Error: {}".format(str(e)))
+        return jsonify(
+            {
+                "code": 500,
+                "data": {
+                    "order_id": order_id
+                },
+                "message": "An error occurred while completing the order. " + str(e)
+            }
+        ), 500
+
 if __name__ == '__main__':
     print("This is flask for " + os.path.basename(__file__) + ": manage orders ...")
     app.run(host='0.0.0.0', port=5004, debug=True)

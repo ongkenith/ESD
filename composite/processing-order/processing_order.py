@@ -390,6 +390,56 @@ If you have any feedback about our service, please let us know.
         "message": "Invalid JSON input: " + str(request.get_data())
     }), 400
 
+@app.route("/complete_order", methods=["POST"])
+def complete_order():
+    if request.is_json:
+        try:
+            data = request.get_json()
+            order_id = data.get("order_id")
+            drone_id = data.get("drone_id")
+
+            if not order_id or not drone_id:
+                return jsonify({"code": 400, "message": "Missing order_id or drone_id"}), 400
+
+            # 1. Update order to COMPLETED
+            order_update_result = invoke_http(
+                f"{order_URL}/{order_id}", method="PUT", json={"status": "COMPLETED"}
+            )
+
+            if order_update_result["code"] != 200:
+                return jsonify({
+                    "code": order_update_result["code"],
+                    "message": "Failed to update order status"
+                }), order_update_result["code"]
+
+            # 2. Update drone to AVAILABLE - Fix: Use the correct drone URL
+            # The drone service is at drone:5006, not through drone-navigation
+            if DOCKER_MODE:
+                drone_service_url = "http://drone:5006/drone"
+            else:
+                drone_service_url = "http://localhost:5006/drone"
+                
+            drone_update_result = invoke_http(
+                f"{drone_service_url}/{drone_id}",
+                method="PUT", json={"status": "AVAILABLE"}
+            )
+
+            if drone_update_result["code"] != 200:
+                return jsonify({
+                    "code": drone_update_result["code"],
+                    "message": "Failed to update drone status"
+                }), drone_update_result["code"]
+
+            return jsonify({
+                "code": 200,
+                "message": f"Order {order_id} completed and drone {drone_id} is now available."
+            }), 200
+
+        except Exception as e:
+            return jsonify({"code": 500, "message": str(e)}), 500
+
+    return jsonify({"code": 400, "message": "Invalid JSON input"}), 400
+
 if __name__ == "__main__":
     print("This is flask for " + os.path.basename(__file__) + " for processing orders...")
     app.run(host="0.0.0.0", port=5400, debug=True)
