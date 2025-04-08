@@ -15,9 +15,11 @@ app = Flask(__name__)
 CORS(app)
 
 # RabbitMQ connection settings
-RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbitmq')
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
 RABBITMQ_PORT = int(os.environ.get('RABBITMQ_PORT', 5672))
 RABBITMQ_QUEUE = os.environ.get('RABBITMQ_QUEUE', 'notification_queue')
+RABBITMQ_USER = os.environ.get('RABBITMQ_USER', 'guest')
+RABBITMQ_PASS = os.environ.get('RABBITMQ_PASS', 'guest')
 
 # Email settings
 EMAIL_ENABLED = os.environ.get('EMAIL_ENABLED', 'true').lower() == 'true'
@@ -443,6 +445,69 @@ def test_email():
             "code": 500,
             "message": f"Error sending test email: {str(e)}"
         }), 500
+
+# Function to send message to RabbitMQ
+@app.route("/notify-payment-success", methods=['POST'])
+def send_to_rabbitmq():
+    try:            
+        message_data = f"""
+Your payment was successful
+
+Our drone is on the way to pick up your items. You will receive another notification when your order has reached its way to your location.
+
+Thank you for choosing our Drone Delivery Service!
+                """
+        print("Attempting to connect to RabbitMQ...")
+        
+        # Retry mechanism for connecting to RabbitMQ
+        max_retries = 5
+        retry_count = 0
+        connected = False
+        
+        while not connected and retry_count < max_retries:
+            try:
+                # Connect to RabbitMQ with credentials
+                credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+                parameters = pika.ConnectionParameters(
+                    host=RABBITMQ_HOST, 
+                    port=RABBITMQ_PORT,
+                    credentials=credentials
+                )
+                connection = pika.BlockingConnection(parameters)
+                connected = True
+            except pika.exceptions.AMQPConnectionError as e:
+                retry_count += 1
+                wait_time = 5
+                print(f"Failed to connect to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}. Retry {retry_count}/{max_retries} in {wait_time} seconds...")
+                print(f"Error: {e}")
+                time.sleep(wait_time)
+        
+        if not connected:
+            raise Exception(f"Could not connect to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT} after maximum retries")
+        
+        print(f"Successfully connected to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}")
+        channel = connection.channel()
+        
+        # Declare the queue
+        channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
+        
+        # Send the message
+        channel.basic_publish(
+            exchange='',
+            routing_key=RABBITMQ_QUEUE,
+            body=json.dumps(message_data),
+            properties=pika.BasicProperties(
+                delivery_mode=2,  # make message persistent
+            )
+        )
+        
+        print(f" [x] Sent notification message to queue: {message_data}")
+        connection.close()
+        return True
+        
+    except Exception as e:
+        print(f"Failed to send message to RabbitMQ: {str(e)}")
+        return False
 
 # Start the consumer thread
 if __name__ != '__main__':

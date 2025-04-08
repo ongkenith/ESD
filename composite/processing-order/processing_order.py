@@ -236,8 +236,6 @@ Order Details:
 - Drone ID: {drone_id}
 - Status: Scheduled for delivery
 
-Our drone is on the way to pick up your items. You will receive another notification when your order is on its way to your location.
-
 Thank you for choosing our Drone Delivery Service!
                 """
                 
