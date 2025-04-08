@@ -41,4 +41,4 @@ Answer: If you are grading this after XXX, the free trial API for the email has 
 &nbsp;&nbsp;&nbsp;&nbsp;5. Under SMTP, click on 'Generate new user' <br>
 &nbsp;&nbsp;&nbsp;&nbsp;6. In the env file, change EMAIL_PASSWORD to SMTP user's password. Change EMAIL_USER and EMAIL_FROM to SMTP user's username <br>
 - All drones seem to be used, as my order is "Pending for delivery". If I want to reset drones to "Avaliable" so that I can test your other services, what should I do? <br>
-Answer: Following Drone API, using HTTP PUT request /drone/<drone_id>, you can reset the drone status to "Available". (Drone ID ranges from 1 to 10)
+Answer: Run reset_drone.py to reset all the drones to "Available"
