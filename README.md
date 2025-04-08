@@ -14,7 +14,7 @@
 **USE CASE 1 STEPS - Add items into order**
 1. Go to "Products" and "Add to cart" items you want to purchase
 2. Proceed to "My Cart" and fill in a postal code before "Proceed to Checkout". It will take a while before the website starts loading
-    - If you face an error saying no drone is available, please refer to the Troubleshooting section below to refresh the drone_status of all drones to be Available. We did not implement the functionality of having an automatic timer to continuously look through the drones_status to assign an available drone to a pending order as it is not part of our use case.
+    - If you face an error saying no drone is available, please refer to the Troubleshooting section below to refresh the drone_status of all drones to be Available. We did not implement the functionality of having an automatic timer to continuously look through the drones_status to assign an available drone to a pending order as it is not part of our use case
 3. You will be redirected to Paypal page to pay for your purchases. Log in with these details
     - Paypal account: sb-iiaqd38594568@personal.example.com
     - Password: O?5)QWKc
