@@ -34,4 +34,9 @@
 Answer: Clear all cache (Docker, Web browser) and restart VScode before trying to compose again
 - I do not receive any notification email
 Answer: If you are grading this after XXX, the free trial API for the email has expired. Please follow the following steps to get an API key and add it to .env file <br>
-&nbsp;&nbsp;&nbsp;&nbsp;1. 
+&nbsp;&nbsp;&nbsp;&nbsp;1. Sign up for an account at https://www.mailersend.com/signup to have an account with trial plan <br>
+&nbsp;&nbsp;&nbsp;&nbsp;2. At Email > Domains, click 'Manage' on the right hand side of the default domain you have <br>
+&nbsp;&nbsp;&nbsp;&nbsp;3. Under API token, click on 'Generate new token' <br>
+&nbsp;&nbsp;&nbsp;&nbsp;4. In the env file, change MAILERSEND_API_KEY to the new API key <br>
+&nbsp;&nbsp;&nbsp;&nbsp;5. Under SMTP, click on 'Generate new user' <br>
+&nbsp;&nbsp;&nbsp;&nbsp;6. In the env file, change EMAIL_PASSWORD to SMTP user's password. Change EMAIL_USER and EMAIL_FROM to SMTP user's username
