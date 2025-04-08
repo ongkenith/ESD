@@ -259,7 +259,8 @@
             //clear the cart ONLY after payment 
             localStorage.removeItem("cart");
             // Redirect to PayPal with order ID
-            window.location.href = `${paypalData.ApprovalURL}?order_id=${orderId}`;
+            localStorage.setItem("last_order_id", orderId);
+            window.location.href = paypalData.ApprovalURL;
         });
 
         // // Add logout functionality
