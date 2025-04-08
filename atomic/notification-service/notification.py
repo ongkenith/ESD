@@ -447,7 +447,7 @@ def test_email():
         }), 500
 
 # Function to send message to RabbitMQ
-@app.route("/notify-payment-success", methods=['POST'])
+@app.route("/notify-payment-success", methods=['GET'])
 def send_to_rabbitmq():
     try:            
         message_data = f"""

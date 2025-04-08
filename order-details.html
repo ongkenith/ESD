@@ -110,7 +110,7 @@ async function loadOrderDetails() {
     `;
     }
 
-    fetch('http://localhost:5300//notify-payment-success')
+    fetch('http://localhost:5300/notify-payment-success')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to fetch orders');
