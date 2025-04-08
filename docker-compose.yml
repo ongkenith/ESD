@@ -1,7 +1,84 @@
 version: '3'
 
+networks:
+  kong-network:
+    driver: bridge
+    name: kong-network
+
+volumes:
+  pgdata:
+
 services:
-  # Database
+  # Kong
+  # Postgres: The database used by Kong
+  kong-database:
+    image: postgres:17.4
+    platform: linux/amd64  # <- required for Mac M1 chip. Otherwise, can remove
+    restart: always
+    environment:
+      POSTGRES_DB: kong
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kong-network
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Kong database migration
+  kong-migration:
+    image: kong/kong-gateway:3.9
+    platform: linux/amd64  # <- required for Mac M1 chip. Otherwise, can remove
+    command: "kong migrations bootstrap"
+    restart: on-failure
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: password
+    depends_on:
+      - kong-database
+    networks:
+      - kong-network
+
+  # Kong: The API Gateway
+  kong:
+    image: kong/kong-gateway:3.9
+    platform: linux/amd64  # <- required for Mac M1 chip. Otherwise, can remove
+    restart: always
+    environment:
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: password
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    networks:
+      - kong-network
+    depends_on:
+      - kong-migration
+    volumes:
+      - ./kong/kong.yml:/etc/kong/kong.yml
+    ports: # https://docs.konghq.com/gateway/latest/production/networking/default-ports/
+      - "8000:8000" # Takes incoming HTTP traffic from Consumers, and forwards it to upstream Services.
+      - "8001:8001" # Admin API. Listens for calls from the command line over HTTP.
+      - "8002:8002" # Kong Manager (GUI). Listens for HTTP traffic.
+    command: >
+      /bin/sh -c "
+        kong config db_import /etc/kong/kong.yml &&
+        kong start
+      "
     
   # Message Queue
   rabbitmq:
@@ -83,28 +160,32 @@ services:
       EMAIL_FROM_NAME: "Drone Delivery Service"
       MAILERSEND_API_KEY: "${MAILERSEND_API_KEY}"
       USE_MAILERSEND_API: "true"
+      CUSTOMER_URL: "http://customer:5001"
     depends_on:
       - rabbitmq
-
-  # # Composite services
-  # placing-order:
-  #   build:
-  #     context: ./composite/placing-order
-  #   ports:
-  #     - "5500:5500" # Port for placing-order service
-  #   environment:
-  #     # Add environment variables needed by placing-order
-  #     CUSTOMER_URL: "http://customer:5001"
-  #     ITEM_URL: "http://item:5002"
-  #     ORDER_URL: "http://order:5004"
-  #     PROCESSING_ORDER_URL: "http://processing-order:5400"
-  #     # PAYMENT_URL: "http://payment:500X" # Assuming a payment service exists or will be added
-  #   depends_on:
-  #     - customer
-  #     - item
-  #     - order
-  #     - processing-order
-  #     # - payment # Add dependency if payment service is used
+      - customer
+      
+  # Composite services
+  placing-order:
+    build:
+      context: ./composite/placing-order
+    ports:
+      - "5500:5500" # Port for placing-order service
+    environment:
+      # Add environment variables needed by placing-order
+      CUSTOMER_URL: "http://customer:5001"
+      ITEM_URL: "http://item:5002"
+      ORDER_URL: "http://order:5004"
+      PROCESSING_ORDER_URL: "http://processing-order:5400"
+      # PAYMENT_URL: "http://payment:500X" # Assuming a payment service exists or will be added
+    depends_on:
+      - customer
+      - item
+      - order
+      - processing-order
+      # - payment # Add dependency if payment service is used
+    networks:
+      - kong-network
 
   condition-check:
     build:
@@ -116,6 +197,8 @@ services:
     depends_on:
       - drone
       - scheduling
+    networks:
+      - kong-network
 
   drone-navigation:
     build:
@@ -124,6 +207,8 @@ services:
       - "5200:5200"
     depends_on:
       - condition-check
+    networks:
+      - kong-network
       
   # New Processing Order service
   processing-order:
@@ -157,11 +242,5 @@ services:
       - item
       - order
       - store
-   
-
-
-networks:
-  default:
-    name: my_app_network
-    driver: bridge
-    external: false
+    networks:
+      - kong-network

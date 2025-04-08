@@ -10,7 +10,7 @@
 3. Open command prompt (on VSCode)
 4. Type in "docker-compose up -d" to start running the service based on your respective docker-compose file
 5. Go to a web browser and type in "https://ongkenith.github.io/ESD/". You should be redirected to the login page.
-6. (If you have not created an account)...
+6. (If you have not created an account) At the login page, do create an account, where everything can be not real EXCEPT your email address (so that you will receive the notification)
 
 **USE CASE 1 STEPS - Add items into order**
 1. Go to "Products" and "add to cart" items you want to purchase
