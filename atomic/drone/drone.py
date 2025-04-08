@@ -6,8 +6,14 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from os import environ
 from flasgger import Swagger
+from flask_cors import CORS
+
+
 
 app = Flask(__name__)
+
+CORS(app)
+
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     environ.get("dbURL")
 )

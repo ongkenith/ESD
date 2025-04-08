@@ -208,6 +208,36 @@
                 return;
             }
 
+            // Check drone availability first
+            console.log("Checking drone availability...");
+            const droneResponse = await fetch("http://localhost:5006/drones", {
+                method: "GET",
+                headers: { "Content-Type": "application/json" }
+            });
+            
+            console.log("Drone response status:", droneResponse.status);
+            
+            if (!droneResponse.ok) {
+                const errorText = await droneResponse.text();
+                console.error("Drone check failed:", errorText);
+                throw new Error("Drone service responded with status ${droneResponse.status}");
+            }
+
+            const droneData = await droneResponse.json();
+            console.log("Drone data received:", droneData);
+            
+            // Filter for available drones - adjust based on actual response structure
+            const availableDrones = droneData.data?.drones?.filter(
+                drone => drone.status === "AVAILABLE"
+            ) || [];
+
+            console.log("Available drones count:", availableDrones.length);
+            
+            if (availableDrones.length === 0) {
+                alert("⚠️ Sorry, we cannot check out at this time. All drones are currently busy. Please try again later.");
+                return;
+            }
+
             //using place order composite to create order
             const placeOrderRes = await fetch("http://localhost:5500/place_order", {
                 method: "POST",
