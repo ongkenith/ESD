@@ -209,7 +209,7 @@
             }
 
             //using place order composite to create order
-            const placeOrderRes = await fetch("http://localhost:8000/api/v1/place_order/place_order", {
+            const placeOrderRes = await fetch("http://localhost:5500/place_order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
