@@ -52,6 +52,7 @@
 
 <script>
     let orderId = localStorage.getItem("last_order_id");
+    const customer = JSON.parse(sessionStorage.getItem('customer'));
     if (!orderId) {
         const urlParams = new URLSearchParams(window.location.search);
         orderId = urlParams.get("order_id");
@@ -110,7 +111,16 @@ async function loadOrderDetails() {
     `;
     }
 
-    fetch('http://localhost:5300/notify-payment-success')
+    fetch('http://localhost:5300/notify-payment-success', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            order_id: orderId,
+            customer: customer
+        })
+    })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to fetch orders');

@@ -447,16 +447,29 @@ def test_email():
         }), 500
 
 # Function to send message to RabbitMQ
-@app.route("/notify-payment-success", methods=['GET'])
+@app.route("/notify-payment-success", methods=['POST'])
 def send_to_rabbitmq():
-    try:            
+    try: 
+        if not request.is_json:
+            return jsonify(
+                {
+            "message": "Lack order ID or customer ID."
+                }
+            ), 200
+        order_id = request.get_json()["order_id"]
+        customer_id = request.get_json()['customer']
         message_data = f"""
 Your payment was successful
 
 Our drone is on the way to pick up your items. You will receive another notification when your order has reached its way to your location.
 
 Thank you for choosing our Drone Delivery Service!
-                """
+        """
+        notification_data = {
+            "customer_id": customer_id,
+            "message": message_data.strip(),
+            "order_id": order_id
+        }
         print("Attempting to connect to RabbitMQ...")
         
         # Retry mechanism for connecting to RabbitMQ
@@ -495,7 +508,7 @@ Thank you for choosing our Drone Delivery Service!
         channel.basic_publish(
             exchange='',
             routing_key=RABBITMQ_QUEUE,
-            body=json.dumps(message_data),
+            body=json.dumps(notification_data),
             properties=pika.BasicProperties(
                 delivery_mode=2,  # make message persistent
             )
@@ -509,11 +522,6 @@ Thank you for choosing our Drone Delivery Service!
         print(f"Failed to send message to RabbitMQ: {str(e)}")
         return False
 
-# Start the consumer thread
-if __name__ != '__main__':
-    consumer_thread = threading.Thread(target=start_consumer)
-    consumer_thread.daemon = True
-    consumer_thread.start()
 
 if __name__ == "__main__":
     # For running the Flask app directly
