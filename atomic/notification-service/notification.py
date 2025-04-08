@@ -34,6 +34,8 @@ EMAIL_FROM_NAME = os.environ.get('EMAIL_FROM_NAME', 'Drone Delivery Service')
 MAILERSEND_API_KEY = os.environ.get('MAILERSEND_API_KEY', 'mlsn.6bdfb137652a12742bf620598b7374f59e91fb2f64b88e42636680365ffb92fc')
 USE_MAILERSEND_API = os.environ.get('USE_MAILERSEND_API', 'false').lower() == 'true'
 
+BACKSLASH = '<br>'
+
 # Function to simulate sending SMS
 def send_sms(phone_number, message):
     print(f"Simulating SMS sent to {phone_number}: {message}")
@@ -459,9 +461,9 @@ def send_to_rabbitmq():
         order_id = request.get_json()["order_id"]
         customer_id = request.get_json()['customer']
         message_data = f"""
-Your payment was successful
+Your payment was successful{BACKSLASH}{BACKSLASH}
 
-Our drone is on the way to pick up your items. You will receive another notification when your order has reached its way to your location.
+Our drone is on the way to pick up your items. You will receive another notification when your order has reached its way to your location.{BACKSLASH}{BACKSLASH}
 
 Thank you for choosing our Drone Delivery Service!
         """

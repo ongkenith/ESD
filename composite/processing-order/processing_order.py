@@ -42,6 +42,8 @@ RABBITMQ_QUEUE = os.environ.get('RABBITMQ_QUEUE', 'notification_queue')
 RABBITMQ_USER = os.environ.get('RABBITMQ_USER', 'guest')
 RABBITMQ_PASS = os.environ.get('RABBITMQ_PASS', 'guest')
 
+BACKSLASH = '<br>'
+
 # Function to send message to RabbitMQ
 def send_to_rabbitmq(message_data):
     try:
@@ -229,15 +231,13 @@ def process_order():
             try:
                 # Create a more detailed notification message
                 notification_message = f"""
-Your order #{order_id} has been scheduled for delivery!
+Your order #{order_id} has been scheduled for delivery!{BACKSLASH}{BACKSLASH}
+Order Details:{BACKSLASH}
+- Pickup: {store_name}{BACKSLASH}
+- Drone ID: {drone_id}{BACKSLASH}
+- Status: Scheduled for delivery{BACKSLASH}{BACKSLASH}
 
-Order Details:
-- Pickup: {store_name}
-- Drone ID: {drone_id}
-- Status: Scheduled for delivery
-
-Thank you for choosing our Drone Delivery Service!
-                """
+Thank you for choosing our Drone Delivery Service!"""
                 
                 notification_data = {
                     "customer_id": customer_id,
@@ -339,9 +339,9 @@ def order_delivered():
             try:
                 # Create a detailed delivery notification
                 notification_message = f"""
-Great news! Your order #{order_id} has been delivered!
+Great news! Your order #{order_id} has been delivered!{BACKSLASH}{BACKSLASH}
 
-Thank you for choosing our Drone Delivery Service. We hope you enjoy your items.
+Thank you for choosing our Drone Delivery Service. We hope you enjoy your items.{BACKSLASH}{BACKSLASH}
 
 If you have any feedback about our service, please let us know.
                 """
