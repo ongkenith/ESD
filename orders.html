@@ -119,7 +119,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- JavaScript for Displaying Orders -->
-    <script>
+    <!-- <script>
         document.addEventListener('DOMContentLoaded', function() {
             const customer = JSON.parse(sessionStorage.getItem('customer'));
             
@@ -213,6 +213,150 @@
         sessionStorage.removeItem('isLoggedIn');
         sessionStorage.removeItem('customer');
         window.location.href = 'index.html';
+        });
+    </script> -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const customer = JSON.parse(sessionStorage.getItem('customer'));
+            
+            // Check if customer exists and has required fields
+            if (!customer || !customer.Email || !customer.Customer_ID) {
+                window.location.href = 'login.html?reason=session_expired';
+                return;
+            }
+
+            // Function to handle "Received Order" button click
+            function handleReceivedOrder(orderId) {
+                fetch('http://localhost:5400/complete_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        alert('Order marked as completed successfully!');
+                        window.location.reload(); // Refresh to show updated status
+                    } else {
+                        alert('Failed to complete order: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while completing the order');
+                });
+            }
+
+            // Fetch all orders from the order microservice
+            fetch('http://localhost:5004/order')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch orders');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const ordersContainer = document.getElementById('orders-container');
+                    ordersContainer.innerHTML = ''; // Clear existing content
+                    
+                    if (data.code === 200 && data.data && data.data.orders.length > 0) {
+                        // Filter orders to only show those matching the customer's ID and payment_status is TRUE
+                        const customerOrders = data.data.orders.filter(
+                            order => order.Customer_ID == customer.Customer_ID && order.payment_status === true
+                        );
+                        
+                        if (customerOrders.length === 0) {
+                            ordersContainer.innerHTML = `
+                                <li id="empty-order-message" class="text-center py-4">
+                                    <p class="text-muted">You haven't placed any orders yet.</p>
+                                </li>
+                            `;
+                            return;
+                        }
+                        
+                        customerOrders.forEach(order => {
+                            const isDelivered = order.order_status === 'DELIVERED';
+                            const isCompleted = order.order_status === 'COMPLETED';
+                            const isPending = order.order_status === 'PENDING FOR DRONE';
+                            const isScheduled = order.order_status === 'SCHEDULED FOR DELIVERY';
+                            
+                            // Determine badge color based on status
+                            let badgeClass = 'bg-secondary';
+                            if (isDelivered) badgeClass = 'bg-success';
+                            else if (isCompleted) badgeClass = 'bg-info text-dark';
+                            else if (isPending) badgeClass = 'bg-warning text-dark';
+                            else if (isScheduled) badgeClass = 'delivering';
+                            
+                            const orderDate = order.order_date ? new Date(order.order_date) : new Date();
+                            
+                            const orderItem = document.createElement('li');
+                            orderItem.classList.add('order-card');
+                            
+                            orderItem.innerHTML = `
+                                <div class="order-details">
+                                    <h5>Order #${order.order_id}</h5>
+                                    <div class="order-info">
+                                        <p class="mb-1">
+                                            <strong>Status:</strong> 
+                                            <span class="badge ${badgeClass}">
+                                                ${order.order_status || 'PENDING'}
+                                            </span>
+                                        </p>
+                                        <p class="mb-1"><strong>Postal Code:</strong> ${order.deliveryLocation || 'N/A'}</p>
+                                        <p class="mb-1"><strong>Amount:</strong> $${parseFloat(order.total_amount || '0').toFixed(2)}</p>
+                                        <p class="mb-1"><strong>Date:</strong> ${orderDate.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                                <button class="btn ${isCompleted ? 'btn-secondary' : 'btn-success'} received-btn" 
+                                        data-order-id="${order.order_id}"
+                                        ${isDelivered ? '' : 'disabled'}>
+                                    ${isCompleted ? 'Order Completed' : 'Received Order'}
+                                </button>
+                            `;
+                            ordersContainer.appendChild(orderItem);
+                            
+                            // Add click handler if button is enabled
+                            if (isDelivered) {
+                                const button = orderItem.querySelector('.received-btn');
+                                button.addEventListener('click', function() {
+                                    if (confirm('Are you sure you have received this order?')) {
+                                        handleReceivedOrder(order.order_id);
+                                    }
+                                });
+                            }
+                        });
+                    } else {
+                        ordersContainer.innerHTML = `
+                            <li class="order-card text-center py-4">
+                                <p class="text-muted">You haven't placed any orders yet.</p>
+                            </li>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('orders-container').innerHTML = `
+                        <li class="order-card text-center py-4 text-danger">
+                            <p>Error loading orders</p>
+                            <small>${error.message}</small>
+                            <div class="mt-2">
+                                <a href="login.html" class="btn btn-outline-secondary">Re-login</a>
+                                <button onclick="window.location.reload()" class="btn btn-outline-primary ms-2">Retry</button>
+                            </div>
+                        </li>
+                    `;
+                });
+
+            // Add logout functionality
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                sessionStorage.removeItem('isLoggedIn');
+                sessionStorage.removeItem('customer');
+                window.location.href = 'index.html';
+            });
         });
     </script>
 </body>
