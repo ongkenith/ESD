@@ -455,7 +455,7 @@ def send_to_rabbitmq():
                 {
             "message": "Lack order ID or customer ID."
                 }
-            ), 200
+            ), 401
         order_id = request.get_json()["order_id"]
         customer_id = request.get_json()['customer']
         message_data = f"""

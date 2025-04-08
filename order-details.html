@@ -52,7 +52,7 @@
 
 <script>
     let orderId = localStorage.getItem("last_order_id");
-    const customer = JSON.parse(sessionStorage.getItem('customer'));
+    const customer = JSON.parse(sessionStorage.getItem('customer')).Customer_ID;
     if (!orderId) {
         const urlParams = new URLSearchParams(window.location.search);
         orderId = urlParams.get("order_id");
