@@ -11,15 +11,16 @@ CORS(app)
 
 # Determine environment and set base URLs
 DOCKER_MODE = os.environ.get('DOCKER_MODE', 'true').lower() == 'true'
+KONG_LOCALHOST = "localhost:8000"
 
 # Set base hostnames based on environment
 if DOCKER_MODE:
     print("Running in Docker mode with container hostnames")
-    ORDER_HOST = "order:5004"
-    STORE_HOST = "store:5003"
-    DRONE_NAVIGATION_HOST = "drone-navigation:5200"
-    NOTIFICATION_HOST = "notification:5300"
-    ITEM_HOST = "item:5002"  # Added item host for Docker mode
+    ORDER_HOST = KONG_LOCALHOST + "/api/v1/order"
+    STORE_HOST = KONG_LOCALHOST + "/api/v1/store"
+    DRONE_NAVIGATION_HOST = KONG_LOCALHOST + "/api/v1/drone_navigation"
+    NOTIFICATION_HOST = KONG_LOCALHOST + "/api/v1/notification"
+    ITEM_HOST = KONG_LOCALHOST + "/api/v1/item"  # Added item host for Docker mode
 else:
     print("Running in local mode with localhost")
     ORDER_HOST = "localhost:5004"

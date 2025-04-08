@@ -7,8 +7,8 @@ app = Flask(__name__)
 CORS(app)
 
 # URLs for the microservices
-condition_check_URL = "http://condition-check:5100/check-condition"
-drone_URL = "http://drone:5006/drone"
+condition_check_URL = "http://localhost:8000/api/v1/condition_check/check-condition"
+drone_URL = "http://localhost:8000/api/v1/drone/drone"
 
 @app.route("/navigate-drone", methods=['POST'])
 def navigate_drone():

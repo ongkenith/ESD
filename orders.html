@@ -227,7 +227,7 @@
 
             // Function to handle "Received Order" button click
             function handleReceivedOrder(orderId) {
-                fetch('http://localhost:5400/complete_order', {
+                fetch('http://localhost:8000/api/v1/processing_order/complete_order', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -252,7 +252,7 @@
             }
 
             // Fetch all orders from the order microservice
-            fetch('http://localhost:5004/order')
+            fetch('http://localhost:8000/api/v1/order/order')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to fetch orders');

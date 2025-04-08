@@ -174,7 +174,7 @@ services:
       EMAIL_FROM_NAME: "Drone Delivery Service"
       MAILERSEND_API_KEY: "${MAILERSEND_API_KEY}"
       USE_MAILERSEND_API: "true"
-      CUSTOMER_URL: "http://customer:5001"
+      CUSTOMER_URL: "http://localhost:8000/api/v1/customer"
     depends_on:
       - rabbitmq
       - customer
@@ -231,10 +231,10 @@ services:
     ports:
       - "5500:5500"
     environment:
-      CUSTOMER_SERVICE_URL: "http://customer:5001"
-      ITEM_SERVICE_URL: "http://item:5002"
-      ORDER_SERVICE_URL: "http://order:5004"    
-      PROCESSING_ORDER_URL: "http://processing-order:5400" 
+      CUSTOMER_SERVICE_URL: "http://localhost:8000/api/v1/customer"
+      ITEM_SERVICE_URL: "http://localhost:8000/api/v1/item"
+      ORDER_SERVICE_URL: "http://localhost:8000/api/v1/order"    
+      PROCESSING_ORDER_URL: "http://localhost:8000/api/v1/processing_order" 
     depends_on:
       - customer
       - item
