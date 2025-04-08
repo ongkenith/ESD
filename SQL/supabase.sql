@@ -101,15 +101,20 @@ CREATE TABLE "Order_Item" (
 DROP TABLE IF EXISTS "scheduling";
 
 CREATE TABLE IF NOT EXISTS "scheduling" (
-"Schedule_ID" SERIAL PRIMARY KEY,
-  "ScheduleName" VARCHAR(255) NOT NULL,
-  "ScheduleDateTime" TIMESTAMP NOT NULL,
-  "WeatherCheck" BOOLEAN NOT NULL,
-  "PickUpLocation" INT NOT NULL,
-  "deliveryLocation" INT NOT NULL,
-  "droneID" INT NOT NULL,
-  FOREIGN KEY ("droneID") REFERENCES "Drone"("droneID")
-    ON DELETE CASCADE ON UPDATE CASCADE
+    "Schedule_ID" SERIAL PRIMARY KEY,
+    "ScheduleDateTime" TIMESTAMP NOT NULL,
+    "WeatherCheck" BOOLEAN NOT NULL,
+    "store_id" INTEGER NOT NULL,
+    "order_id" INTEGER NOT NULL,
+    "droneID" INTEGER NOT NULL,
+    "actual_pickup_location" INTEGER NOT NULL,
+    "actual_delivery_location" INTEGER NOT NULL,
+    FOREIGN KEY ("store_id") REFERENCES "Store"("store_id")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY ("order_id") REFERENCES "Order"("order_id")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY ("droneID") REFERENCES "Drone"("droneID")
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 select * from "Customer";
