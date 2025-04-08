@@ -207,98 +207,115 @@
                 window.location.href = 'login.html';
                 return;
             }
-
+            
             // Check drone availability first
             console.log("Checking drone availability...");
-            const droneResponse = await fetch("http://localhost:5006/drones", {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            });
-            
-            console.log("Drone response status:", droneResponse.status);
-            
-            if (!droneResponse.ok) {
-                const errorText = await droneResponse.text();
-                console.error("Drone check failed:", errorText);
-                throw new Error("Drone service responded with status ${droneResponse.status}");
-            }
-
-            const droneData = await droneResponse.json();
-            console.log("Drone data received:", droneData);
-            
-            // Filter for available drones - adjust based on actual response structure
-            const availableDrones = droneData.data?.drones?.filter(
-                drone => drone.status === "AVAILABLE"
-            ) || [];
-
-            console.log("Available drones count:", availableDrones.length);
-            
-            if (availableDrones.length === 0) {
-                alert("⚠️ Sorry, we cannot check out at this time. All drones are currently busy. Please try again later.");
-                return;
-            }
-
-            //using place order composite to create order
-            const placeOrderRes = await fetch("http://localhost:5500/place_order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                Customer_ID: customer.Customer_ID,
-                cart_item: cart.map(item => ({
-                    item_id: item.id,
-                    quantity: item.quantity
-                })),
-                delivery_location: parseInt(postalCode)
-                })
-            });
-            
-            if (!placeOrderRes.ok) {
-                alert("❌ Failed to place order. Please try again.");
-                return;
-            }
-            
-            const orderResult = await placeOrderRes.json();
-            const orderId = orderResult.order_id;
-            const totalAmount = orderResult.total_amount;
-            const items = orderResult.items_ordered;
-        
-            // call paypal api
-            const paypalRes = await fetch('https://personal-zcvdggd4.outsystemscloud.com/paymentAPI/rest/CreatePaymentAPI/CreatePayment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    Order_ID: orderId,
-                    Amount: totalAmount.toFixed(2),
-                    Currency: "USD",
-                    Description: `Payment for Order #${orderId}`,
-                    Item_list: {
-                        Items: items.map(item => ({
-                        Name: item.name,
-                        Price: item.price,
-                        Quantity: item.quantity,
-                        Currency: "USD"
-                        }))
+                    const droneResponse = await fetch("http://localhost:5006/drones", {
+                        method: "GET",
+                        headers: { "Content-Type": "application/json" }
+                    });
+                    
+                    if (!droneResponse.ok) {
+                        const errorText = await droneResponse.text();
+                        throw new Error("Drone check failed: " + errorText);
                     }
-                    })
-                });
-                
-            const paypalData = await paypalRes.json();
-            if (!paypalData?.ApprovalURL) {
-                throw new Error('Failed to get PayPal approval URL');
-            }
-            //clear the cart ONLY after payment 
-            localStorage.removeItem("cart");
-            // Redirect to PayPal with order ID
-            localStorage.setItem("last_order_id", orderId);
-            window.location.href = paypalData.ApprovalURL;
-        });
 
-        // // Add logout functionality
-        document.getElementById('logout-btn').addEventListener('click', function() {
-        sessionStorage.removeItem('isLoggedIn');
-        sessionStorage.removeItem('customer');
-        window.location.href = 'index.html';
-        });
+                    const droneData = await droneResponse.json();
+                    const availableDrones = droneData.data?.drones?.filter(
+                        drone => drone.status === "AVAILABLE" || drone.status === "Available"
+                    ) || [];
+
+                    // Calculate total amount from cart
+                    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                    const orderItems = cart.map(item => ({
+                        item_id: item.id,
+                        quantity: item.quantity,
+                        name: item.name,
+                        price: item.price
+                    }));
+
+                    let orderId;
+                    
+                    if (availableDrones.length === 0) {
+                        // No drones available - create order directly
+                        console.log("No drones available - creating order via /order endpoint");
+                        const orderRes = await fetch("http://localhost:5004/order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                Customer_ID: customer.Customer_ID,
+                                total_amount: totalAmount,
+                                delivery_location: parseInt(postalCode),
+                                cart_item: orderItems
+                            })
+                        });
+                        
+                        if (!orderRes.ok) {
+                            const errorText = await orderRes.text();
+                            throw new Error("Failed to create order: " + errorText);
+                        }
+                        
+                        const orderData = await orderRes.json();
+                        orderId = orderData.data.order_id;
+                    } else {
+                        // Drones available - use composite service
+                        console.log("Drones available - creating order via place_order composite");
+                        const placeOrderRes = await fetch("http://localhost:5500/place_order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                Customer_ID: customer.Customer_ID,
+                                cart_item: orderItems,
+                                delivery_location: parseInt(postalCode)
+                            })
+                        });
+                        
+                        if (!placeOrderRes.ok) {
+                            alert("❌ Failed to place order. Please try again.");
+                            return;
+                        }
+                        
+                        const orderResult = await placeOrderRes.json();
+                        orderId = orderResult.order_id;
+                    }
+
+                    // Call PayPal API with the created order
+                    const paypalRes = await fetch('https://personal-zcvdggd4.outsystemscloud.com/paymentAPI/rest/CreatePaymentAPI/CreatePayment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            Order_ID: orderId,
+                            Amount: totalAmount.toFixed(2),
+                            Currency: "USD",
+                            Description: `Payment for Order #${orderId}`,
+                            Item_list: {
+                                Items: orderItems.map(item => ({
+                                    Name: item.name,
+                                    Price: item.price,
+                                    Quantity: item.quantity,
+                                    Currency: "USD"
+                                }))
+                            }
+                        })
+                    });
+                        
+                    const paypalData = await paypalRes.json();
+                    if (!paypalData?.ApprovalURL) {
+                        throw new Error('Failed to get PayPal approval URL');
+                    }
+                    
+                    // Clear the cart and redirect to PayPal
+                    localStorage.removeItem("cart");
+                    localStorage.setItem("last_order_id", orderId);
+                    window.location.href = paypalData.ApprovalURL;
+            });
+
+            // // Add logout functionality
+            document.getElementById('logout-btn').addEventListener('click', function() {
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('customer');
+            window.location.href = 'index.html';
+            });
     </script>
 </body>
 </html>
