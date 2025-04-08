@@ -164,7 +164,7 @@ services:
     depends_on:
       - rabbitmq
       - customer
-
+      
   # Composite services
   placing-order:
     build:
@@ -227,5 +227,20 @@ services:
       - drone-navigation
       - rabbitmq
       - notification
+
+  placing-order:
+    build:
+      context: ./composite/placing-order
+    ports:
+      - "5500:5500"
+    environment:
+      - CUSTOMER_SERVICE_URL=http://customer:5005/customer
+      - ITEM_SERVICE_URL=http://item:5002/items
+      - ORDER_SERVICE_URL=http://order:5010/order      
+    depends_on:
+      - customer
+      - item
+      - order
+      - store
     networks:
       - kong-network
