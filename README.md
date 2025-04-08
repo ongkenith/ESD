@@ -14,6 +14,7 @@
 **USE CASE 1 STEPS - Add items into order**
 1. Go to "Products" and "Add to cart" items you want to purchase
 2. Proceed to "My Cart" and fill in a postal code before "Proceed to Checkout". It will take a while before the website starts loading
+    - If you face an error saying no drone is available, please refer to the Troubleshooting section below to refresh the drone_status of all drones to be Available. We did not implement the functionality of having an automatic timer to continuously look through the drones_status to assign an available drone to a pending order as it is not part of our use case.
 3. You will be redirected to Paypal page to pay for your purchases. Log in with these details
     - Paypal account: sb-iiaqd38594568@personal.example.com
     - Password: O?5)QWKc
@@ -28,6 +29,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;- An email notification will be sent
 &nbsp;&nbsp;&nbsp;&nbsp;- In "My Orders", the order should have changed it status
 2. After collecting the parcel, return to the website and click "Received"
+3. To initiate the use case, send a POST request to http://localhost:5400/order_delivered on POSTMAN with an order_id to mimic the arrival of a parcel
 
 **Troubleshooting**
 - I seem to have issues composing the Docker files from docker-compose? Keep getting ModuleNotFoundError. <br>
